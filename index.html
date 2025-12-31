@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Book Indodax - Ultra Fast</title>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:system-ui,-apple-system,sans-serif;padding:10px;background:#0f0f1a;color:#fff;min-height:100vh}
+        h2{text-align:center;color:#00d4ff;font-size:24px;margin-bottom:5px}
+        .subtitle{text-align:center;color:#666;font-size:12px;margin-bottom:15px}
+        .controls{position:sticky;top:0;z-index:100;background:#0f0f1a;padding:10px 0;border-bottom:1px solid #333}
+        .dropdown{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:10px;padding:10px;background:rgba(255,255,255,0.03);border-radius:8px}
+        .dropdown label{font-weight:bold;font-size:14px}
+        .select-wrapper{position:relative;min-width:250px}
+        #pairSelect{padding:10px 15px;font-size:14px;border:none;border-radius:5px;background:#2d3748;color:#fff;cursor:pointer;width:100%}
+        .search-dropdown{position:absolute;top:100%;left:0;right:0;background:#2d3748;border-radius:0 0 5px 5px;display:none;z-index:1000;box-shadow:0 5px 20px rgba(0,0,0,0.5)}
+        .search-dropdown.show{display:block}
+        .search-dropdown input{width:100%;padding:10px;border:none;border-bottom:1px solid #444;background:#1a1a2e;color:#fff;font-size:14px;outline:none}
+        .search-options{max-height:200px;overflow-y:auto}
+        .search-option{padding:8px 12px;cursor:pointer;font-size:13px}
+        .search-option:hover,.search-option.selected{background:rgba(0,212,255,0.2)}
+        .search-option.hidden{display:none}
+        .no-result{padding:10px;text-align:center;color:#666;display:none;font-size:13px}
+        .status{padding:6px 12px;border-radius:5px;font-size:12px;font-weight:bold}
+        .status.loading{background:#f6ad55;color:#000}
+        .status.error{background:#fc8181;color:#000}
+        .status.success{background:#68d391;color:#000}
+        .btn{padding:10px 20px;background:#00d4ff;color:#000;border:none;border-radius:5px;cursor:pointer;font-weight:bold;font-size:13px}
+        .btn:hover{background:#00a8cc}
+        .btn:disabled{background:#666;cursor:not-allowed}
+        .btn-sm{padding:6px 12px;font-size:11px;background:#444}
+        .btn-sm:hover{background:#555}
+        .price-info{display:none;justify-content:center;gap:30px;padding:12px;background:rgba(0,212,255,0.1);border-radius:8px;margin:15px 0;flex-wrap:wrap}
+        .price-box{text-align:center}
+        .price-box .label{font-size:11px;color:#666}
+        .price-box .value{font-size:18px;font-weight:bold;font-family:monospace}
+        .price-box.buy .value{color:#68d391}
+        .price-box.sell .value{color:#fc8181}
+        .price-box.spread .value{color:#f6ad55}
+        .container{display:flex;gap:15px;flex-wrap:wrap;justify-content:center}
+        .table-wrapper{flex:1;min-width:350px;max-width:550px;background:rgba(255,255,255,0.02);border-radius:10px;padding:15px;border:1px solid rgba(255,255,255,0.1)}
+        .table-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid}
+        .table-wrapper.buy .table-header{border-color:#68d391}
+        .table-wrapper.sell .table-header{border-color:#fc8181}
+        .table-header h3{font-size:14px}
+        .table-wrapper.buy h3{color:#68d391}
+        .table-wrapper.sell h3{color:#fc8181}
+        .order-count{font-size:12px;padding:4px 10px;border-radius:15px;font-weight:bold}
+        .buy .order-count{background:rgba(104,211,145,0.2);color:#68d391}
+        .sell .order-count{background:rgba(252,129,129,0.2);color:#fc8181}
+        .table-scroll{max-height:400px;overflow-y:auto}
+        table{border-collapse:collapse;width:100%}
+        th,td{padding:6px 5px;text-align:right;font-size:12px}
+        th{background:rgba(0,0,0,0.4);color:#00d4ff;font-weight:600;position:sticky;top:0;font-size:11px;text-transform:uppercase}
+        .buy td:nth-child(2){color:#68d391;font-weight:bold}
+        .sell td:nth-child(2){color:#fc8181;font-weight:bold}
+        .rn{color:#444!important;font-size:10px!important;text-align:center!important;width:30px}
+        .summary{margin-top:10px;padding:10px;background:rgba(0,0,0,0.2);border-radius:8px;font-size:12px}
+        .summary-row{display:flex;justify-content:space-between;padding:3px 0}
+        .summary-label{color:#666}
+        .buy .summary-value{color:#68d391}
+        .sell .summary-value{color:#fc8181}
+        .last-update{text-align:center;color:#555;font-size:11px;margin-top:15px}
+        .load-more{text-align:center;padding:10px}
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <h2>📊 Order Book Indodax</h2>
+        <p class="subtitle">Ultra Fast Mode</p>
+        <div class="dropdown">
+            <label>🪙 Koin:</label>
+            <div class="select-wrapper">
+                <select id="pairSelect"><option value="">Loading...</option></select>
+                <div class="search-dropdown" id="searchDropdown">
+                    <input type="text" id="searchInput" placeholder="🔍 Cari..." autocomplete="off">
+                    <div class="search-options" id="searchOptions"></div>
+                    <div class="no-result" id="noResult">Tidak ditemukan</div>
+                </div>
+            </div>
+            <button class="btn" id="refreshBtn" onclick="refresh()">🔄 Refresh</button>
+            <span class="status" id="status"></span>
+        </div>
+    </div>
+    
+    <div class="price-info" id="priceInfo">
+        <div class="price-box buy"><div class="label">Best Bid</div><div class="value" id="highestBuy">-</div></div>
+        <div class="price-box spread"><div class="label">Spread</div><div class="value" id="spread">-</div></div>
+        <div class="price-box sell"><div class="label">Best Ask</div><div class="value" id="lowestSell">-</div></div>
+    </div>
+    
+    <div class="container">
+        <div class="table-wrapper buy">
+            <div class="table-header">
+                <h3>📈 BUY</h3>
+                <span class="order-count" id="buyCount">0</span>
+            </div>
+            <div class="table-scroll">
+                <table><thead><tr><th class="rn">#</th><th>Harga</th><th>Volume</th><th>Total</th></tr></thead><tbody id="buyBody"><tr><td colspan="4" style="text-align:center;color:#666">⏳ Loading...</td></tr></tbody></table>
+            </div>
+            <div class="load-more" id="buyMore" style="display:none"><button class="btn btn-sm" onclick="showAll('buy')">Tampilkan Semua</button></div>
+            <div class="summary">
+                <div class="summary-row"><span class="summary-label">Orders:</span><span class="summary-value" id="buyOrders">-</span></div>
+                <div class="summary-row"><span class="summary-label">Volume:</span><span class="summary-value" id="buyVol">-</span></div>
+                <div class="summary-row"><span class="summary-label">Value:</span><span class="summary-value" id="buyVal">-</span></div>
+            </div>
+        </div>
+        
+        <div class="table-wrapper sell">
+            <div class="table-header">
+                <h3>📉 SELL</h3>
+                <span class="order-count" id="sellCount">0</span>
+            </div>
+            <div class="table-scroll">
+                <table><thead><tr><th class="rn">#</th><th>Harga</th><th>Volume</th><th>Total</th></tr></thead><tbody id="sellBody"><tr><td colspan="4" style="text-align:center;color:#666">⏳ Loading...</td></tr></tbody></table>
+            </div>
+            <div class="load-more" id="sellMore" style="display:none"><button class="btn btn-sm" onclick="showAll('sell')">Tampilkan Semua</button></div>
+            <div class="summary">
+                <div class="summary-row"><span class="summary-label">Orders:</span><span class="summary-value" id="sellOrders">-</span></div>
+                <div class="summary-row"><span class="summary-label">Volume:</span><span class="summary-value" id="sellVol">-</span></div>
+                <div class="summary-row"><span class="summary-label">Value:</span><span class="summary-value" id="sellVal">-</span></div>
+            </div>
+        </div>
+    </div>
+    
+    <p class="last-update" id="lastUpdate"></p>
+
+<script>
+const PROXY='https://api.allorigins.win/raw?url=';
+const LIMIT=100;
+let pairs=[],currentId='',buyData=[],sellData=[],coinName='';
+
+const $=id=>document.getElementById(id);
+const sel=$('pairSelect'),buyBody=$('buyBody'),sellBody=$('sellBody'),status=$('status'),searchDrop=$('searchDropdown'),searchIn=$('searchInput'),searchOpts=$('searchOptions'),noRes=$('noResult');
+
+// Searchable dropdown
+sel.onclick=e=>{e.preventDefault();searchDrop.classList.add('show');searchIn.value='';filter('');searchIn.focus()};
+searchIn.oninput=()=>filter(searchIn.value);
+document.onclick=e=>{if(!e.target.closest('.select-wrapper'))searchDrop.classList.remove('show')};
+
+function filter(t){
+    let has=0;
+    searchOpts.querySelectorAll('.search-option').forEach(o=>{
+        const m=o.textContent.toLowerCase().includes(t.toLowerCase());
+        o.classList.toggle('hidden',!m);
+        if(m)has=1;
+    });
+    noRes.style.display=has?'none':'block';
+}
+
+function buildOpts(){
+    searchOpts.innerHTML=pairs.map(p=>`<div class="search-option${p.id===currentId?' selected':''}" data-v="${p.id}">${p.description} (${p.id.toUpperCase()})</div>`).join('');
+    searchOpts.onclick=e=>{
+        if(e.target.classList.contains('search-option')){
+            const v=e.target.dataset.v;
+            sel.value=v;
+            searchDrop.classList.remove('show');
+            searchOpts.querySelectorAll('.search-option').forEach(o=>o.classList.toggle('selected',o.dataset.v===v));
+            load(v);
+        }
+    };
+}
+
+function setStatus(m,t='loading'){status.textContent=m;status.className='status '+t;if(t==='success')setTimeout(()=>{status.textContent='';status.className='status'},2000)}
+
+async function fetchAPI(url){
+    const r=await fetch(PROXY+encodeURIComponent(url));
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json();
+}
+
+async function init(){
+    setStatus('Loading...');
+    try{
+        const d=await fetchAPI('https://indodax.com/api/pairs');
+        pairs=d.sort((a,b)=>a.description.localeCompare(b.description));
+        sel.innerHTML=pairs.map(p=>`<option value="${p.id}">${p.description} (${p.id.toUpperCase()})</option>`).join('');
+        const btc=pairs.find(p=>p.id==='btcidr');
+        currentId=btc?btc.id:pairs[0].id;
+        sel.value=currentId;
+        buildOpts();
+        await load(currentId);
+    }catch(e){
+        setStatus('❌ '+e.message,'error');
+        pairs=[{id:'btcidr',description:'Bitcoin/IDR'},{id:'ethidr',description:'Ethereum/IDR'},{id:'dogeidr',description:'Dogecoin/IDR'}];
+        sel.innerHTML=pairs.map(p=>`<option value="${p.id}">${p.description}</option>`).join('');
+        currentId='btcidr';
+        buildOpts();
+        load('btcidr');
+    }
+}
+
+async function load(id){
+    currentId=id;
+    const p=pairs.find(x=>x.id===id);
+    coinName=p?p.description.split('/')[0].trim():id.replace('idr','').toUpperCase();
+    
+    setStatus('Loading...');
+    $('refreshBtn').disabled=true;
+    buyBody.innerHTML=sellBody.innerHTML='<tr><td colspan="4" style="text-align:center;color:#666">⏳</td></tr>';
+    
+    try{
+        const d=await fetchAPI(`https://indodax.com/api/depth/${id}`);
+        buyData=d.buy||[];
+        sellData=d.sell||[];
+        
+        // Price info
+        if(buyData.length&&sellData.length){
+            const hb=+buyData[0][0],ls=+sellData[0][0],sp=ls-hb;
+            $('highestBuy').textContent=fmt(hb);
+            $('lowestSell').textContent=fmt(ls);
+            $('spread').textContent=fmt(sp)+' ('+(sp/ls*100).toFixed(2)+'%)';
+            $('priceInfo').style.display='flex';
+        }
+        
+        render('buy',LIMIT);
+        render('sell',LIMIT);
+        
+        $('lastUpdate').textContent='🕐 '+new Date().toLocaleTimeString('id-ID')+' | '+(buyData.length+sellData.length)+' orders';
+        setStatus('✓','success');
+    }catch(e){
+        setStatus('❌ Error','error');
+        buyBody.innerHTML=sellBody.innerHTML='<tr><td colspan="4" style="text-align:center;color:#fc8181">❌ Gagal</td></tr>';
+    }
+    $('refreshBtn').disabled=false;
+}
+
+function render(type,limit){
+    const data=type==='buy'?buyData:sellData;
+    const body=type==='buy'?buyBody:sellBody;
+    const show=limit?data.slice(0,limit):data;
+    
+    let vol=0,val=0,html='';
+    data.forEach((r,i)=>{
+        const h=+r[0],j=+r[1],t=h*j;
+        vol+=j;val+=t;
+        if(i<show.length)html+=`<tr><td class="rn">${i+1}</td><td>${fmt(h)}</td><td>${fmtV(j)}</td><td>${fmtC(t)}</td></tr>`;
+    });
+    
+    body.innerHTML=html||'<tr><td colspan="4" style="text-align:center">-</td></tr>';
+    $(type+'Count').textContent=data.length;
+    $(type+'Orders').textContent=data.length;
+    $(type+'Vol').textContent=fmtV(vol)+' '+coinName;
+    $(type+'Val').textContent=fmtCF(val);
+    $(type+'More').style.display=(limit&&data.length>limit)?'block':'none';
+}
+
+function showAll(type){render(type,0);$(type+'More').style.display='none'}
+function refresh(){if(currentId)load(currentId)}
+
+function fmt(n){return(+n).toLocaleString('id-ID')}
+function fmtV(n){n=+n;if(!n)return'0';if(n<.0001)return n.toFixed(8);if(n<1)return n.toFixed(4);if(n<1e6)return n.toLocaleString('id-ID',{maximumFractionDigits:2});return(n/1e6).toFixed(2)+'M'}
+function fmtC(n){if(n>=1e9)return'Rp'+(n/1e9).toFixed(1)+'M';if(n>=1e6)return'Rp'+(n/1e6).toFixed(1)+'Jt';if(n>=1e3)return'Rp'+(n/1e3).toFixed(0)+'Rb';return'Rp'+Math.round(n)}
+function fmtCF(n){if(n>=1e12)return'Rp'+(n/1e12).toFixed(2)+' T';if(n>=1e9)return'Rp'+(n/1e9).toFixed(2)+' M';if(n>=1e6)return'Rp'+(n/1e6).toFixed(2)+' Jt';return'Rp'+Math.round(n).toLocaleString('id-ID')}
+
+sel.onchange=function(){load(this.value)};
+init();
+</script>
+</body>
+</html>
