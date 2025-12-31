@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Order Book Indodax - Hyper Speed v3.1</title>
+    <title>Order Book Indodax - Hyper Speed v3.3</title>
     
     <link rel="dns-prefetch" href="//indodax.com">
     <link rel="dns-prefetch" href="//corsproxy.io">
@@ -30,15 +30,48 @@
         @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
         
         .controls{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px;padding:10px;background:var(--card);border-radius:10px;margin:10px 0}
-        .select-wrap{position:relative;min-width:220px}
-        .select-wrap select{width:100%;padding:10px 35px 10px 12px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:13px;cursor:pointer;appearance:none}
-        .select-wrap::after{content:'▼';position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--muted);pointer-events:none}
-        .current-pair{font-size:11px;color:var(--accent);margin-left:5px}
+        
+        .select-wrap{position:relative;min-width:280px}
+        .select-display{width:100%;padding:10px 35px 10px 12px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .2s}
+        .select-display:hover{border-color:var(--accent)}
+        .select-display.open{border-color:var(--accent);border-radius:6px 6px 0 0}
+        .select-display::after{content:'▼';position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--muted);transition:transform .2s}
+        .select-display.open::after{transform:translateY(-50%) rotate(180deg)}
+        .select-icon{font-size:16px}
+        .select-text{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .select-pair{font-size:10px;color:var(--accent);background:rgba(0,212,255,.1);padding:2px 6px;border-radius:4px}
+        
+        .search-dropdown{position:absolute;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--accent);border-top:none;border-radius:0 0 6px 6px;display:none;z-index:1000;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+        .search-dropdown.show{display:block}
+        .search-input-wrap{position:relative;border-bottom:1px solid var(--border)}
+        .search-input-wrap::before{content:'🔍';position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px}
+        .search-input{width:100%;padding:12px 12px 12px 38px;border:none;background:var(--bg);color:var(--text);font-size:13px;outline:none}
+        .search-input::placeholder{color:var(--muted)}
+        .search-options{max-height:280px;overflow-y:auto}
+        .search-options::-webkit-scrollbar{width:4px}
+        .search-options::-webkit-scrollbar-track{background:var(--bg)}
+        .search-options::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+        .search-option{padding:10px 12px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:background .1s;border-bottom:1px solid rgba(255,255,255,.02)}
+        .search-option:hover{background:rgba(0,212,255,.1)}
+        .search-option.selected{background:rgba(0,212,255,.15)}
+        .search-option.hidden{display:none}
+        .option-icon{font-size:18px;width:24px;text-align:center}
+        .option-info{flex:1;min-width:0}
+        .option-name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .option-pair{font-size:10px;color:var(--muted);margin-top:2px}
+        .option-check{color:var(--accent);font-size:14px;opacity:0}
+        .search-option.selected .option-check{opacity:1}
+        .no-result{padding:20px;text-align:center;color:var(--muted);display:none}
+        .no-result.show{display:block}
+        .search-stats{padding:8px 12px;background:rgba(0,0,0,.2);font-size:10px;color:var(--muted);display:flex;justify-content:space-between}
+        
         .btn{padding:10px 20px;border:none;border-radius:6px;font-weight:600;cursor:pointer;transition:all .15s;font-size:12px}
         .btn-primary{background:var(--accent);color:#000}
         .btn-primary:hover{filter:brightness(1.2);transform:scale(1.02)}
         .btn-primary:active{transform:scale(.98)}
         .btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
+        .btn-sm{padding:6px 14px;font-size:11px;background:rgba(255,255,255,.1);color:var(--text)}
+        .btn-sm:hover{background:rgba(255,255,255,.15)}
         .status-badge{padding:6px 12px;border-radius:20px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
         .status-badge.loading{background:rgba(255,170,0,.15);color:var(--warning)}
         .status-badge.success{background:rgba(0,255,136,.15);color:var(--buy)}
@@ -64,11 +97,13 @@
         .table-title{font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px}
         .table-card.buy .table-title{color:var(--buy)}
         .table-card.sell .table-title{color:var(--sell)}
+        .header-right{display:flex;align-items:center;gap:8px}
         .count-badge{font-size:11px;padding:3px 10px;border-radius:12px;font-weight:600}
         .table-card.buy .count-badge{background:rgba(0,255,136,.1);color:var(--buy)}
         .table-card.sell .count-badge{background:rgba(255,68,102,.1);color:var(--sell)}
         
-        .table-scroll{height:350px;overflow-y:auto;overflow-x:hidden;contain:strict}
+        .table-scroll{height:400px;overflow-y:auto;overflow-x:hidden;contain:strict}
+        .table-scroll.expanded{height:auto;max-height:600px}
         .table-scroll::-webkit-scrollbar{width:4px}
         .table-scroll::-webkit-scrollbar-track{background:var(--bg)}
         .table-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
@@ -87,6 +122,10 @@
         .depth-bar{position:absolute;top:0;bottom:0;right:0;opacity:.15;pointer-events:none}
         .table-card.buy .depth-bar{background:var(--buy)}
         .table-card.sell .depth-bar{background:var(--sell)}
+        
+        .load-more-row{text-align:center;padding:10px}
+        .load-more-row button{background:rgba(0,212,255,.1);border:1px solid var(--accent);color:var(--accent);padding:8px 20px;border-radius:6px;cursor:pointer;font-size:11px;transition:all .2s}
+        .load-more-row button:hover{background:rgba(0,212,255,.2)}
         
         .summary{padding:10px 15px;background:rgba(0,0,0,.2);font-size:11px}
         .summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
@@ -111,11 +150,16 @@
         .error-box{text-align:center;padding:30px;color:var(--sell)}
         .error-box button{margin-top:10px}
         
+        .search-option.keyboard-focus{background:rgba(0,212,255,.2);outline:1px solid var(--accent)}
+        
+        .data-info{font-size:10px;color:var(--muted);text-align:center;padding:5px;background:rgba(0,0,0,.2);border-top:1px solid var(--border)}
+        
         @media(max-width:768px){
             .tables{grid-template-columns:1fr}
             .price-bar{grid-template-columns:1fr 1fr;gap:8px}
             .price-item:first-child,.price-item:last-child{text-align:center}
             .price-item.spread-item{grid-column:span 2}
+            .select-wrap{min-width:100%;max-width:100%}
         }
     </style>
 </head>
@@ -123,35 +167,50 @@
     <div class="header">
         <div class="logo">
             ⚡ HYPER ORDER BOOK
-            <span class="badge">v3.1 FIXED</span>
+            <span class="badge">v3.3</span>
         </div>
         <div class="speed-indicator">
-            <span><span class="dot" id="wsStatus"></span> <span id="wsText">Connecting...</span></span>
+            <span><span class="dot" id="wsStatus"></span> <span id="wsText">Menghubungkan...</span></span>
             <span>🚀 <span id="latency">--</span>ms</span>
             <span>📊 <span id="rps">0</span> req/s</span>
         </div>
     </div>
     
     <div class="controls">
-        <div class="select-wrap">
-            <select id="pairSelect"></select>
+        <div class="select-wrap" id="selectWrap">
+            <div class="select-display" id="selectDisplay">
+                <span class="select-icon">🪙</span>
+                <span class="select-text" id="selectText">Memuat...</span>
+                <span class="select-pair" id="selectPair">---</span>
+            </div>
+            <div class="search-dropdown" id="searchDropdown">
+                <div class="search-input-wrap">
+                    <input type="text" class="search-input" id="searchInput" placeholder="Ketik untuk mencari koin..." autocomplete="off">
+                </div>
+                <div class="search-options" id="searchOptions"></div>
+                <div class="no-result" id="noResult">😕 Tidak ditemukan</div>
+                <div class="search-stats">
+                    <span id="searchCount">0 koin</span>
+                    <span>↑↓ Navigasi • Enter Pilih • Esc Tutup</span>
+                </div>
+            </div>
         </div>
-        <span class="current-pair" id="currentPairDisplay"></span>
+        
         <button class="btn btn-primary" id="refreshBtn">⚡ REFRESH</button>
         <span class="status-badge" id="status"></span>
     </div>
     
     <div class="price-bar" id="priceBar" style="display:none">
         <div class="price-item">
-            <div class="price-label">Best Bid</div>
+            <div class="price-label">Harga Beli Tertinggi</div>
             <div class="price-value buy" id="bestBid">-</div>
         </div>
         <div class="price-item spread-item">
-            <div class="price-label">Spread</div>
+            <div class="price-label">Selisih (Spread)</div>
             <div class="price-value spread" id="spread">-</div>
         </div>
         <div class="price-item">
-            <div class="price-label">Best Ask</div>
+            <div class="price-label">Harga Jual Terendah</div>
             <div class="price-value sell" id="bestAsk">-</div>
         </div>
     </div>
@@ -159,49 +218,55 @@
     <div class="tables">
         <div class="table-card buy">
             <div class="table-header">
-                <span class="table-title">📈 BUY ORDERS</span>
-                <span class="count-badge" id="buyCount">0</span>
+                <span class="table-title">📈 ORDER BELI</span>
+                <div class="header-right">
+                    <span class="count-badge" id="buyCount">0</span>
+                </div>
             </div>
             <div class="table-scroll gpu" id="buyScroll">
                 <table>
-                    <thead><tr><th>#</th><th>Price (IDR)</th><th>Amount</th><th>Total</th></tr></thead>
+                    <thead><tr><th>No</th><th>Harga (Rp)</th><th>Jumlah</th><th>Total (Rp)</th></tr></thead>
                     <tbody id="buyBody"></tbody>
                 </table>
             </div>
+            <div class="data-info" id="buyInfo">Menampilkan 0 dari 0 order</div>
             <div class="summary">
                 <div class="summary-grid">
-                    <div class="summary-item"><div class="summary-label">Orders</div><div class="summary-value" id="buyOrders">-</div></div>
-                    <div class="summary-item"><div class="summary-label">Volume</div><div class="summary-value" id="buyVol">-</div></div>
-                    <div class="summary-item"><div class="summary-label">Value</div><div class="summary-value" id="buyVal">-</div></div>
+                    <div class="summary-item"><div class="summary-label">Total Order</div><div class="summary-value" id="buyOrders">-</div></div>
+                    <div class="summary-item"><div class="summary-label">Total Volume</div><div class="summary-value" id="buyVol">-</div></div>
+                    <div class="summary-item"><div class="summary-label">Total Nilai</div><div class="summary-value" id="buyVal">-</div></div>
                 </div>
             </div>
         </div>
         
         <div class="table-card sell">
             <div class="table-header">
-                <span class="table-title">📉 SELL ORDERS</span>
-                <span class="count-badge" id="sellCount">0</span>
+                <span class="table-title">📉 ORDER JUAL</span>
+                <div class="header-right">
+                    <span class="count-badge" id="sellCount">0</span>
+                </div>
             </div>
             <div class="table-scroll gpu" id="sellScroll">
                 <table>
-                    <thead><tr><th>#</th><th>Price (IDR)</th><th>Amount</th><th>Total</th></tr></thead>
+                    <thead><tr><th>No</th><th>Harga (Rp)</th><th>Jumlah</th><th>Total (Rp)</th></tr></thead>
                     <tbody id="sellBody"></tbody>
                 </table>
             </div>
+            <div class="data-info" id="sellInfo">Menampilkan 0 dari 0 order</div>
             <div class="summary">
                 <div class="summary-grid">
-                    <div class="summary-item"><div class="summary-label">Orders</div><div class="summary-value" id="sellOrders">-</div></div>
-                    <div class="summary-item"><div class="summary-label">Volume</div><div class="summary-value" id="sellVol">-</div></div>
-                    <div class="summary-item"><div class="summary-label">Value</div><div class="summary-value" id="sellVal">-</div></div>
+                    <div class="summary-item"><div class="summary-label">Total Order</div><div class="summary-value" id="sellOrders">-</div></div>
+                    <div class="summary-item"><div class="summary-label">Total Volume</div><div class="summary-value" id="sellVol">-</div></div>
+                    <div class="summary-item"><div class="summary-label">Total Nilai</div><div class="summary-value" id="sellVal">-</div></div>
                 </div>
             </div>
         </div>
     </div>
     
     <div class="footer">
-        <div>Last Update: <span id="lastUpdate">-</span> | Data by <a href="https://indodax.com" target="_blank">Indodax</a></div>
+        <div>Terakhir Diperbarui: <span id="lastUpdate">-</span> | Sumber: <a href="https://indodax.com" target="_blank">Indodax</a></div>
         <div class="perf-stats">
-            <span class="perf-stat" id="fetchTime">⏱️ Fetch: --ms</span>
+            <span class="perf-stat" id="fetchTime">⏱️ Ambil: --ms</span>
             <span class="perf-stat" id="renderTime">🎨 Render: --ms</span>
             <span class="perf-stat" id="totalTime">⚡ Total: --ms</span>
         </div>
@@ -209,7 +274,7 @@
 
 <script>
 // ============================================
-// 🚀 HYPER SPEED ENGINE v3.1 - BUG FIXED
+// 🚀 HYPER SPEED ENGINE v3.3 - FULL INDONESIA
 // ============================================
 
 const CONFIG = {
@@ -219,47 +284,51 @@ const CONFIG = {
         url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
     ],
     TIMEOUT: 5000,
-    MAX_ROWS: 150,
+    INITIAL_ROWS: 50, // Awalnya tampilkan 50
     CACHE_TTL: 3600000
 };
 
+// Crypto icons
+const CRYPTO_ICONS = {
+    btc:'₿',eth:'⟠',doge:'🐕',shib:'🐕',xrp:'✕',bnb:'⬡',sol:'◎',ada:'₳',
+    dot:'●',matic:'⬡',link:'⬡',uni:'🦄',atom:'⚛',ltc:'Ł',etc:'⟠',
+    trx:'◈',xlm:'✦',vet:'✔',fil:'⨎',theta:'ϑ',icp:'∞',aave:'👻',
+    usdt:'₮',usdc:'$',busd:'$',default:'🪙'
+};
+
+function getCryptoIcon(id) {
+    const symbol = id.replace('idr', '').toLowerCase();
+    return CRYPTO_ICONS[symbol] || CRYPTO_ICONS.default;
+}
+
 // ============================================
-// 💾 SIMPLE CACHE
+// 💾 CACHE
 // ============================================
 const Cache = {
     data: new Map(),
-    
     get(key) {
         const item = this.data.get(key);
-        if (!item) return null;
-        if (Date.now() > item.exp) {
+        if (!item || Date.now() > item.exp) {
             this.data.delete(key);
             return null;
         }
         return item.value;
     },
-    
     set(key, value, ttl = CONFIG.CACHE_TTL) {
         this.data.set(key, { value, exp: Date.now() + ttl });
-    },
-    
-    clear() {
-        this.data.clear();
     }
 };
 
 // ============================================
-// ⚡ HYPER FETCH
+// ⚡ FETCHER
 // ============================================
 const Fetcher = {
-    proxyIndex: 0,
     stats: CONFIG.PROXIES.map(() => ({ time: 1000, fails: 0 })),
     
     async fetch(url) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), CONFIG.TIMEOUT);
         
-        // Try proxies in order of performance
         const sorted = CONFIG.PROXIES
             .map((fn, i) => ({ fn, i, score: this.stats[i].time + this.stats[i].fails * 500 }))
             .sort((a, b) => a.score - b.score);
@@ -268,11 +337,8 @@ const Fetcher = {
         
         for (const { fn, i } of sorted) {
             try {
-                const proxyUrl = fn(url);
-                console.log(`[Fetch] Trying proxy ${i}:`, proxyUrl);
-                
                 const start = performance.now();
-                const res = await fetch(proxyUrl, { 
+                const res = await fetch(fn(url), { 
                     signal: controller.signal,
                     headers: { 'Accept': 'application/json' }
                 });
@@ -283,24 +349,18 @@ const Fetcher = {
                 const elapsed = performance.now() - start;
                 
                 clearTimeout(timeoutId);
-                
-                // Update stats
                 this.stats[i].time = this.stats[i].time * 0.7 + elapsed * 0.3;
                 this.stats[i].fails = Math.max(0, this.stats[i].fails - 1);
-                this.proxyIndex = i;
                 
-                console.log(`[Fetch] Success via proxy ${i} in ${elapsed.toFixed(0)}ms`);
                 return { data, elapsed, proxy: i };
-                
             } catch (e) {
-                console.warn(`[Fetch] Proxy ${i} failed:`, e.message);
                 this.stats[i].fails++;
                 lastError = e;
             }
         }
         
         clearTimeout(timeoutId);
-        throw lastError || new Error('All proxies failed');
+        throw lastError || new Error('Semua proxy gagal');
     }
 };
 
@@ -308,42 +368,61 @@ const Fetcher = {
 // 🎨 RENDERER
 // ============================================
 const Renderer = {
+    // Store full data for "load more"
+    buyData: [],
+    sellData: [],
+    buyShown: 0,
+    sellShown: 0,
+    coinName: '',
+    
+    // Format harga dengan Rp
     formatPrice(n) {
-        if (n >= 1000) return n.toLocaleString('id-ID');
-        if (n >= 1) return n.toFixed(2);
-        if (n >= 0.0001) return n.toFixed(4);
-        return n.toFixed(8);
+        if (n >= 1) return 'Rp ' + n.toLocaleString('id-ID');
+        if (n >= 0.0001) return 'Rp ' + n.toFixed(4);
+        return 'Rp ' + n.toFixed(8);
     },
     
+    // Format jumlah koin
     formatAmount(n) {
-        if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
-        if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
-        if (n >= 1e3) return (n / 1e3).toFixed(2) + 'K';
+        if (n >= 1e9) return (n / 1e9).toFixed(2) + ' M';
+        if (n >= 1e6) return (n / 1e6).toFixed(2) + ' Jt';
+        if (n >= 1e3) return (n / 1e3).toFixed(2) + ' Rb';
         if (n >= 1) return n.toFixed(4);
         if (n >= 0.0001) return n.toFixed(4);
         return n.toFixed(8);
     },
     
+    // Format total dalam Rupiah
     formatTotal(n) {
-        if (n >= 1e12) return (n / 1e12).toFixed(1) + 'T';
-        if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B';
-        if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
-        if (n >= 1e3) return (n / 1e3).toFixed(0) + 'K';
-        return n.toFixed(0);
+        if (n >= 1e12) return 'Rp ' + (n / 1e12).toFixed(2) + ' T';
+        if (n >= 1e9) return 'Rp ' + (n / 1e9).toFixed(2) + ' M';
+        if (n >= 1e6) return 'Rp ' + (n / 1e6).toFixed(2) + ' Jt';
+        if (n >= 1e3) return 'Rp ' + (n / 1e3).toFixed(0) + ' Rb';
+        return 'Rp ' + n.toLocaleString('id-ID');
     },
     
+    // Format nilai summary
     formatValue(n) {
-        if (n >= 1e12) return 'Rp' + (n / 1e12).toFixed(2) + 'T';
-        if (n >= 1e9) return 'Rp' + (n / 1e9).toFixed(2) + 'M';
-        if (n >= 1e6) return 'Rp' + (n / 1e6).toFixed(2) + 'Jt';
-        return 'Rp' + Math.round(n).toLocaleString('id-ID');
+        if (n >= 1e12) return 'Rp ' + (n / 1e12).toFixed(2) + ' Triliun';
+        if (n >= 1e9) return 'Rp ' + (n / 1e9).toFixed(2) + ' Miliar';
+        if (n >= 1e6) return 'Rp ' + (n / 1e6).toFixed(2) + ' Juta';
+        return 'Rp ' + Math.round(n).toLocaleString('id-ID');
     },
     
-    renderTable(type, data, coinName) {
-        console.log(`[Render] ${type} - ${data.length} orders for ${coinName}`);
+    renderTable(type, data, coinName, showCount = CONFIG.INITIAL_ROWS) {
+        // Store data for load more
+        if (type === 'buy') {
+            this.buyData = data;
+            this.buyShown = showCount;
+        } else {
+            this.sellData = data;
+            this.sellShown = showCount;
+        }
+        this.coinName = coinName;
         
         const tbody = document.getElementById(type + 'Body');
-        const display = data.slice(0, CONFIG.MAX_ROWS);
+        const display = data.slice(0, showCount);
+        const hasMore = data.length > showCount;
         
         // Calculate totals and max depth
         let totalVol = 0, totalVal = 0;
@@ -358,8 +437,8 @@ const Renderer = {
         
         const maxDepth = Math.max(...totals.slice(0, 20)) || 1;
         
-        // Build HTML
-        const html = display.map((row, i) => {
+        // Build rows HTML
+        let html = display.map((row, i) => {
             const p = +row[0], a = +row[1], t = p * a;
             const depthPct = Math.min((t / maxDepth) * 100, 100);
             
@@ -374,31 +453,204 @@ const Renderer = {
             </tr>`;
         }).join('');
         
-        // Update DOM
+        // Add "load more" button if there's more data
+        if (hasMore) {
+            const remaining = data.length - showCount;
+            html += `<tr class="load-more-row">
+                <td colspan="4">
+                    <button onclick="Renderer.loadMore('${type}')">
+                        📥 Tampilkan ${Math.min(remaining, 50)} lagi (${remaining} tersisa)
+                    </button>
+                </td>
+            </tr>`;
+        }
+        
         tbody.innerHTML = html;
         
-        // Update summary
+        // Update info
+        document.getElementById(type + 'Info').textContent = 
+            `Menampilkan ${Math.min(showCount, data.length)} dari ${data.length} order`;
+        
+        // Update counts and summary
         document.getElementById(type + 'Count').textContent = data.length;
-        document.getElementById(type + 'Orders').textContent = data.length.toLocaleString();
+        document.getElementById(type + 'Orders').textContent = data.length.toLocaleString('id-ID');
         document.getElementById(type + 'Vol').textContent = this.formatAmount(totalVol) + ' ' + coinName;
         document.getElementById(type + 'Val').textContent = this.formatValue(totalVal);
+    },
+    
+    loadMore(type) {
+        if (type === 'buy') {
+            this.buyShown += 50;
+            this.renderTable('buy', this.buyData, this.coinName, this.buyShown);
+        } else {
+            this.sellShown += 50;
+            this.renderTable('sell', this.sellData, this.coinName, this.sellShown);
+        }
         
-        console.log(`[Render] ${type} done - Vol: ${totalVol}, Val: ${totalVal}`);
+        // Scroll to bottom of new content
+        const scroll = document.getElementById(type + 'Scroll');
+        scroll.scrollTop = scroll.scrollHeight;
     },
     
     showSkeleton(type) {
-        const tbody = document.getElementById(type + 'Body');
-        tbody.innerHTML = Array(10).fill(
+        document.getElementById(type + 'Body').innerHTML = Array(10).fill(
             '<tr><td colspan="4"><div class="skeleton skeleton-row"></div></td></tr>'
         ).join('');
+        document.getElementById(type + 'Info').textContent = 'Memuat data...';
     },
     
     showError(type, message) {
-        const tbody = document.getElementById(type + 'Body');
-        tbody.innerHTML = `<tr><td colspan="4" class="error-box">
+        document.getElementById(type + 'Body').innerHTML = `<tr><td colspan="4" class="error-box">
             ❌ ${message}<br>
-            <button class="btn btn-primary" onclick="App.refresh()">🔄 Retry</button>
+            <button class="btn btn-primary" onclick="App.refresh()">🔄 Coba Lagi</button>
         </td></tr>`;
+        document.getElementById(type + 'Info').textContent = 'Gagal memuat data';
+    }
+};
+
+// ============================================
+// 🔍 SEARCH DROPDOWN
+// ============================================
+const SearchDropdown = {
+    isOpen: false,
+    keyboardIndex: -1,
+    filteredOptions: [],
+    el: {},
+    
+    init() {
+        this.el = {
+            wrap: document.getElementById('selectWrap'),
+            display: document.getElementById('selectDisplay'),
+            text: document.getElementById('selectText'),
+            pair: document.getElementById('selectPair'),
+            dropdown: document.getElementById('searchDropdown'),
+            input: document.getElementById('searchInput'),
+            options: document.getElementById('searchOptions'),
+            noResult: document.getElementById('noResult'),
+            count: document.getElementById('searchCount')
+        };
+        
+        this.el.display.addEventListener('click', () => this.toggle());
+        this.el.input.addEventListener('input', () => this.filter());
+        this.el.input.addEventListener('keydown', (e) => this.handleKeyboard(e));
+        
+        document.addEventListener('click', (e) => {
+            if (!this.el.wrap.contains(e.target)) this.close();
+        });
+        
+        this.el.options.addEventListener('click', (e) => {
+            const option = e.target.closest('.search-option');
+            if (option) this.select(option.dataset.id);
+        });
+    },
+    
+    buildOptions(pairs, currentId) {
+        this.el.options.innerHTML = pairs.map(p => `
+            <div class="search-option${p.id === currentId ? ' selected' : ''}" data-id="${p.id}">
+                <span class="option-icon">${getCryptoIcon(p.id)}</span>
+                <div class="option-info">
+                    <div class="option-name">${p.description}</div>
+                    <div class="option-pair">${p.id.toUpperCase()}</div>
+                </div>
+                <span class="option-check">✓</span>
+            </div>
+        `).join('');
+        
+        this.el.count.textContent = `${pairs.length} koin tersedia`;
+        this.filteredOptions = [...this.el.options.querySelectorAll('.search-option')];
+    },
+    
+    updateDisplay(pair) {
+        if (pair) {
+            this.el.text.textContent = pair.description;
+            this.el.pair.textContent = pair.id.toUpperCase();
+        }
+    },
+    
+    toggle() {
+        this.isOpen ? this.close() : this.open();
+    },
+    
+    open() {
+        this.isOpen = true;
+        this.el.display.classList.add('open');
+        this.el.dropdown.classList.add('show');
+        this.el.input.value = '';
+        this.filter();
+        this.el.input.focus();
+        this.keyboardIndex = -1;
+    },
+    
+    close() {
+        this.isOpen = false;
+        this.el.display.classList.remove('open');
+        this.el.dropdown.classList.remove('show');
+    },
+    
+    filter() {
+        const query = this.el.input.value.toLowerCase().trim();
+        let visibleCount = 0;
+        this.filteredOptions = [];
+        
+        this.el.options.querySelectorAll('.search-option').forEach(opt => {
+            const name = opt.querySelector('.option-name').textContent.toLowerCase();
+            const pair = opt.querySelector('.option-pair').textContent.toLowerCase();
+            const match = name.includes(query) || pair.includes(query);
+            
+            opt.classList.toggle('hidden', !match);
+            if (match) {
+                visibleCount++;
+                this.filteredOptions.push(opt);
+            }
+        });
+        
+        this.el.noResult.classList.toggle('show', visibleCount === 0);
+        this.el.count.textContent = `${visibleCount} koin ditemukan`;
+        this.keyboardIndex = -1;
+    },
+    
+    handleKeyboard(e) {
+        const opts = this.filteredOptions;
+        
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                this.keyboardIndex = Math.min(this.keyboardIndex + 1, opts.length - 1);
+                this.updateKeyboardFocus();
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                this.keyboardIndex = Math.max(this.keyboardIndex - 1, 0);
+                this.updateKeyboardFocus();
+                break;
+            case 'Enter':
+                e.preventDefault();
+                if (this.keyboardIndex >= 0 && opts[this.keyboardIndex]) {
+                    this.select(opts[this.keyboardIndex].dataset.id);
+                }
+                break;
+            case 'Escape':
+                e.preventDefault();
+                this.close();
+                break;
+        }
+    },
+    
+    updateKeyboardFocus() {
+        this.el.options.querySelectorAll('.keyboard-focus').forEach(el => el.classList.remove('keyboard-focus'));
+        if (this.keyboardIndex >= 0 && this.filteredOptions[this.keyboardIndex]) {
+            const opt = this.filteredOptions[this.keyboardIndex];
+            opt.classList.add('keyboard-focus');
+            opt.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+    },
+    
+    select(id) {
+        this.el.options.querySelectorAll('.search-option').forEach(opt => {
+            opt.classList.toggle('selected', opt.dataset.id === id);
+        });
+        this.close();
+        App.loadOrderBook(id);
     }
 };
 
@@ -412,16 +664,10 @@ const App = {
     isLoading: false,
     requestCount: 0,
     startTime: Date.now(),
-    
-    // DOM Elements
     el: {},
     
     async init() {
-        console.log('[App] Initializing...');
-        
-        // Cache DOM elements
         this.el = {
-            select: document.getElementById('pairSelect'),
             refreshBtn: document.getElementById('refreshBtn'),
             status: document.getElementById('status'),
             wsStatus: document.getElementById('wsStatus'),
@@ -435,14 +681,14 @@ const App = {
             lastUpdate: document.getElementById('lastUpdate'),
             fetchTime: document.getElementById('fetchTime'),
             renderTime: document.getElementById('renderTime'),
-            totalTime: document.getElementById('totalTime'),
-            currentPairDisplay: document.getElementById('currentPairDisplay')
+            totalTime: document.getElementById('totalTime')
         };
         
-        // Show loading
+        SearchDropdown.init();
+        
         Renderer.showSkeleton('buy');
         Renderer.showSkeleton('sell');
-        this.setStatus('Initializing...', 'loading');
+        this.setStatus('Memulai...', 'loading');
         
         // RPS Counter
         setInterval(() => {
@@ -450,152 +696,111 @@ const App = {
             this.el.rps.textContent = elapsed > 0 ? (this.requestCount / Math.max(elapsed, 1)).toFixed(1) : '0';
         }, 1000);
         
-        // Load pairs
         try {
             await this.loadPairs();
             await this.loadOrderBook(this.currentPair);
             
             this.el.wsStatus.className = 'dot';
-            this.el.wsText.textContent = 'Connected';
+            this.el.wsText.textContent = 'Terhubung';
         } catch (e) {
-            console.error('[App] Init error:', e);
             this.setStatus('❌ ' + e.message, 'error');
             this.el.wsStatus.className = 'dot error';
-            this.el.wsText.textContent = 'Error';
+            this.el.wsText.textContent = 'Gagal';
         }
         
-        // Event Listeners
-        this.el.select.addEventListener('change', (e) => {
-            console.log('[App] Pair changed to:', e.target.value);
-            this.loadOrderBook(e.target.value);
-        });
-        
-        this.el.refreshBtn.addEventListener('click', () => {
-            console.log('[App] Manual refresh');
-            this.refresh();
-        });
+        this.el.refreshBtn.addEventListener('click', () => this.refresh());
     },
     
     async loadPairs() {
-        // Try cache first
         let pairs = Cache.get('pairs');
         
         if (!pairs) {
-            console.log('[App] Fetching pairs from API...');
-            this.setStatus('Loading pairs...', 'loading');
-            
+            this.setStatus('Memuat daftar koin...', 'loading');
             const result = await Fetcher.fetch('https://indodax.com/api/pairs');
             pairs = result.data.sort((a, b) => a.description.localeCompare(b.description));
             Cache.set('pairs', pairs);
-        } else {
-            console.log('[App] Using cached pairs');
         }
         
         this.pairs = pairs;
         
-        // Build select options
-        this.el.select.innerHTML = pairs.map(p => 
-            `<option value="${p.id}">${p.description} (${p.id.toUpperCase()})</option>`
-        ).join('');
-        
-        // Default to BTC or first
         const btc = pairs.find(p => p.id === 'btcidr');
         this.currentPair = btc ? btc.id : pairs[0]?.id || 'btcidr';
-        this.el.select.value = this.currentPair;
         
-        console.log('[App] Loaded', pairs.length, 'pairs, default:', this.currentPair);
+        SearchDropdown.buildOptions(pairs, this.currentPair);
+        SearchDropdown.updateDisplay(pairs.find(p => p.id === this.currentPair));
     },
     
     async loadOrderBook(pairId) {
-        if (this.isLoading) {
-            console.log('[App] Already loading, skipping...');
-            return;
-        }
+        if (this.isLoading) return;
         
         this.isLoading = true;
         this.currentPair = pairId;
         
-        // Get coin name
         const pair = this.pairs.find(p => p.id === pairId);
         this.coinName = pair ? pair.description.split('/')[0].trim() : pairId.replace('idr', '').toUpperCase();
         
-        console.log('[App] Loading order book for:', pairId, '- Coin:', this.coinName);
+        SearchDropdown.updateDisplay(pair);
         
-        // Update UI
-        this.el.currentPairDisplay.textContent = `(${pairId.toUpperCase()})`;
         this.el.refreshBtn.disabled = true;
         this.el.wsStatus.className = 'dot slow';
-        this.setStatus('Loading...', 'loading');
+        this.setStatus('Memuat...', 'loading');
         
-        // Show skeleton
         Renderer.showSkeleton('buy');
         Renderer.showSkeleton('sell');
         
         const totalStart = performance.now();
         
         try {
-            // Fetch data
             const fetchStart = performance.now();
             const result = await Fetcher.fetch(`https://indodax.com/api/depth/${pairId}`);
             const fetchTime = performance.now() - fetchStart;
             
             this.requestCount++;
             
-            console.log('[App] Data received:', result.data);
-            
-            // Extract buy/sell data
+            // Data dari API (tidak ada limit dari kode kita!)
             const buyData = result.data.buy || [];
             const sellData = result.data.sell || [];
             
-            console.log('[App] Buy orders:', buyData.length, 'Sell orders:', sellData.length);
+            console.log(`[Data] ${pairId}: ${buyData.length} beli, ${sellData.length} jual`);
             
-            // Update latency display
             this.el.latency.textContent = Math.round(result.elapsed);
-            this.el.fetchTime.textContent = `⏱️ Fetch: ${Math.round(fetchTime)}ms`;
+            this.el.fetchTime.textContent = `⏱️ Ambil: ${Math.round(fetchTime)}ms`;
             this.el.fetchTime.className = 'perf-stat ' + this.getSpeedClass(fetchTime);
             
-            // Update price bar
             if (buyData.length && sellData.length) {
                 const bestBid = +buyData[0][0];
                 const bestAsk = +sellData[0][0];
                 const spread = bestAsk - bestBid;
                 const spreadPct = ((spread / bestAsk) * 100).toFixed(3);
                 
-                this.el.bestBid.textContent = bestBid.toLocaleString('id-ID');
-                this.el.bestAsk.textContent = bestAsk.toLocaleString('id-ID');
-                this.el.spread.textContent = `${spread.toLocaleString('id-ID')} (${spreadPct}%)`;
+                this.el.bestBid.textContent = 'Rp ' + bestBid.toLocaleString('id-ID');
+                this.el.bestAsk.textContent = 'Rp ' + bestAsk.toLocaleString('id-ID');
+                this.el.spread.textContent = `Rp ${spread.toLocaleString('id-ID')} (${spreadPct}%)`;
                 this.el.priceBar.style.display = 'grid';
             }
             
-            // Render tables
             const renderStart = performance.now();
             
-            Renderer.renderTable('buy', buyData, this.coinName);
-            Renderer.renderTable('sell', sellData, this.coinName);
+            // Render dengan initial rows, ada tombol load more
+            Renderer.renderTable('buy', buyData, this.coinName, CONFIG.INITIAL_ROWS);
+            Renderer.renderTable('sell', sellData, this.coinName, CONFIG.INITIAL_ROWS);
             
             const renderTime = performance.now() - renderStart;
             const totalTime = performance.now() - totalStart;
             
-            // Update performance stats
             this.el.renderTime.textContent = `🎨 Render: ${Math.round(renderTime)}ms`;
             this.el.renderTime.className = 'perf-stat ' + this.getSpeedClass(renderTime);
             
             this.el.totalTime.textContent = `⚡ Total: ${Math.round(totalTime)}ms`;
             this.el.totalTime.className = 'perf-stat ' + this.getSpeedClass(totalTime);
             
-            // Update footer
             this.el.lastUpdate.textContent = new Date().toLocaleTimeString('id-ID') + 
-                ` | ${pairId.toUpperCase()} | ${buyData.length + sellData.length} orders`;
+                ` | ${pairId.toUpperCase()} | ${buyData.length + sellData.length} order`;
             
-            // Success!
-            this.setStatus('✓ Ready', 'success');
+            this.setStatus('✓ Siap', 'success');
             this.el.wsStatus.className = 'dot';
             
-            console.log('[App] Load complete in', Math.round(totalTime), 'ms');
-            
         } catch (e) {
-            console.error('[App] Load error:', e);
-            
             this.setStatus('❌ ' + e.message, 'error');
             this.el.wsStatus.className = 'dot error';
             
@@ -608,9 +813,7 @@ const App = {
     },
     
     refresh() {
-        if (this.currentPair) {
-            this.loadOrderBook(this.currentPair);
-        }
+        if (this.currentPair) this.loadOrderBook(this.currentPair);
     },
     
     getSpeedClass(ms) {
@@ -620,19 +823,13 @@ const App = {
     },
     
     setStatus(text, type) {
-        const el = this.el.status;
-        el.className = 'status-badge ' + type;
-        
-        if (type === 'loading') {
-            el.innerHTML = `<span class="spinner"></span> ${text}`;
-        } else {
-            el.textContent = text;
-        }
+        this.el.status.className = 'status-badge ' + type;
+        this.el.status.innerHTML = type === 'loading' ? `<span class="spinner"></span> ${text}` : text;
         
         if (type === 'success') {
             setTimeout(() => {
-                el.textContent = '';
-                el.className = 'status-badge';
+                this.el.status.textContent = '';
+                this.el.status.className = 'status-badge';
             }, 2000);
         }
     }
@@ -641,13 +838,9 @@ const App = {
 // ============================================
 // 🚀 START
 // ============================================
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('[Boot] Starting Hyper Order Book v3.1');
-    App.init();
-});
-
-// Expose for retry button
+document.addEventListener('DOMContentLoaded', () => App.init());
 window.App = App;
+window.Renderer = Renderer;
 </script>
 </body>
 </html>
