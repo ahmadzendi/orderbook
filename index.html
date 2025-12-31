@@ -3,469 +3,686 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Order Book Indodax - Ultra Fast v2</title>
+    <title>Order Book Indodax - Hyper Speed</title>
+    
+    <!-- DNS Prefetch & Preconnect untuk speed maksimal -->
+    <link rel="dns-prefetch" href="//indodax.com">
+    <link rel="dns-prefetch" href="//corsproxy.io">
+    <link rel="preconnect" href="https://indodax.com" crossorigin>
+    <link rel="preconnect" href="https://corsproxy.io" crossorigin>
+    
     <style>
         *{box-sizing:border-box;margin:0;padding:0}
-        body{font-family:system-ui,-apple-system,sans-serif;padding:10px;background:#0f0f1a;color:#fff;min-height:100vh}
-        h2{text-align:center;color:#00d4ff;font-size:24px;margin-bottom:5px}
-        .subtitle{text-align:center;color:#666;font-size:12px;margin-bottom:15px}
-        .controls{position:sticky;top:0;z-index:100;background:#0f0f1a;padding:10px 0;border-bottom:1px solid #333}
-        .dropdown{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:10px;padding:10px;background:rgba(255,255,255,0.03);border-radius:8px}
-        .dropdown label{font-weight:bold;font-size:14px}
-        .select-wrapper{position:relative;min-width:250px}
-        #pairSelect{padding:10px 15px;font-size:14px;border:none;border-radius:5px;background:#2d3748;color:#fff;cursor:pointer;width:100%}
-        .search-dropdown{position:absolute;top:100%;left:0;right:0;background:#2d3748;border-radius:0 0 5px 5px;display:none;z-index:1000;box-shadow:0 5px 20px rgba(0,0,0,0.5)}
-        .search-dropdown.show{display:block}
-        .search-dropdown input{width:100%;padding:10px;border:none;border-bottom:1px solid #444;background:#1a1a2e;color:#fff;font-size:14px;outline:none}
-        .search-options{max-height:200px;overflow-y:auto}
-        .search-option{padding:8px 12px;cursor:pointer;font-size:13px}
-        .search-option:hover,.search-option.selected{background:rgba(0,212,255,0.2)}
-        .search-option.hidden{display:none}
-        .no-result{padding:10px;text-align:center;color:#666;display:none;font-size:13px}
-        .status{padding:6px 12px;border-radius:5px;font-size:12px;font-weight:bold;display:inline-flex;align-items:center;gap:5px}
-        .status.loading{background:#f6ad55;color:#000}
-        .status.error{background:#fc8181;color:#000}
-        .status.success{background:#68d391;color:#000}
-        .spinner{width:12px;height:12px;border:2px solid transparent;border-top-color:currentColor;border-radius:50%;animation:spin 0.8s linear infinite}
+        :root{--bg:#0a0a12;--card:#12121f;--border:#1e1e32;--text:#e0e0e0;--muted:#666;--buy:#00ff88;--sell:#ff4466;--accent:#00d4ff;--warning:#ffaa00}
+        html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:8px;font-size:13px}
+        
+        /* GPU Acceleration */
+        .gpu{transform:translateZ(0);will-change:transform;backface-visibility:hidden}
+        
+        /* Header */
+        .header{text-align:center;padding:10px 0;position:sticky;top:0;z-index:100;background:var(--bg);border-bottom:1px solid var(--border)}
+        .logo{font-size:20px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--buy));-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:inline-flex;align-items:center;gap:8px}
+        .badge{font-size:9px;padding:2px 6px;background:var(--accent);color:#000;border-radius:10px;font-weight:700;animation:pulse 2s infinite;-webkit-text-fill-color:#000}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
+        .speed-indicator{display:flex;justify-content:center;gap:15px;margin-top:8px;font-size:10px;color:var(--muted)}
+        .speed-indicator span{display:flex;align-items:center;gap:4px}
+        .dot{width:6px;height:6px;border-radius:50%;background:var(--buy);animation:blink 1s infinite}
+        .dot.slow{background:var(--warning)}
+        .dot.error{background:var(--sell);animation:none}
+        @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+        
+        /* Controls */
+        .controls{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px;padding:10px;background:var(--card);border-radius:10px;margin:10px 0}
+        .select-wrap{position:relative;min-width:220px}
+        .select-wrap select{width:100%;padding:10px 35px 10px 12px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:13px;cursor:pointer;appearance:none}
+        .select-wrap::after{content:'▼';position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--muted);pointer-events:none}
+        .btn{padding:10px 20px;border:none;border-radius:6px;font-weight:600;cursor:pointer;transition:all .15s;font-size:12px}
+        .btn-primary{background:var(--accent);color:#000}
+        .btn-primary:hover{filter:brightness(1.2);transform:scale(1.02)}
+        .btn-primary:active{transform:scale(.98)}
+        .btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
+        .status-badge{padding:6px 12px;border-radius:20px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+        .status-badge.loading{background:rgba(255,170,0,.15);color:var(--warning)}
+        .status-badge.success{background:rgba(0,255,136,.15);color:var(--buy)}
+        .status-badge.error{background:rgba(255,68,102,.15);color:var(--sell)}
+        .spinner{width:10px;height:10px;border:2px solid transparent;border-top-color:currentColor;border-radius:50%;animation:spin .6s linear infinite}
         @keyframes spin{to{transform:rotate(360deg)}}
-        .btn{padding:10px 20px;background:#00d4ff;color:#000;border:none;border-radius:5px;cursor:pointer;font-weight:bold;font-size:13px;transition:all 0.2s}
-        .btn:hover{background:#00a8cc;transform:scale(1.02)}
-        .btn:disabled{background:#666;cursor:not-allowed;transform:none}
-        .btn-sm{padding:6px 12px;font-size:11px;background:#444}
-        .btn-sm:hover{background:#555}
-        .proxy-info{text-align:center;font-size:10px;color:#555;margin-top:5px}
-        .price-info{display:none;justify-content:center;gap:30px;padding:12px;background:rgba(0,212,255,0.1);border-radius:8px;margin:15px 0;flex-wrap:wrap}
-        .price-box{text-align:center}
-        .price-box .label{font-size:11px;color:#666}
-        .price-box .value{font-size:18px;font-weight:bold;font-family:monospace}
-        .price-box.buy .value{color:#68d391}
-        .price-box.sell .value{color:#fc8181}
-        .price-box.spread .value{color:#f6ad55}
-        .container{display:flex;gap:15px;flex-wrap:wrap;justify-content:center}
-        .table-wrapper{flex:1;min-width:350px;max-width:550px;background:rgba(255,255,255,0.02);border-radius:10px;padding:15px;border:1px solid rgba(255,255,255,0.1)}
-        .table-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid}
-        .table-wrapper.buy .table-header{border-color:#68d391}
-        .table-wrapper.sell .table-header{border-color:#fc8181}
-        .table-header h3{font-size:14px}
-        .table-wrapper.buy h3{color:#68d391}
-        .table-wrapper.sell h3{color:#fc8181}
-        .order-count{font-size:12px;padding:4px 10px;border-radius:15px;font-weight:bold}
-        .buy .order-count{background:rgba(104,211,145,0.2);color:#68d391}
-        .sell .order-count{background:rgba(252,129,129,0.2);color:#fc8181}
-        .table-scroll{max-height:400px;overflow-y:auto}
-        table{border-collapse:collapse;width:100%}
-        th,td{padding:6px 5px;text-align:right;font-size:12px}
-        th{background:rgba(0,0,0,0.4);color:#00d4ff;font-weight:600;position:sticky;top:0;font-size:11px;text-transform:uppercase}
-        .buy td:nth-child(2){color:#68d391;font-weight:bold}
-        .sell td:nth-child(2){color:#fc8181;font-weight:bold}
-        .rn{color:#444!important;font-size:10px!important;text-align:center!important;width:30px}
-        .summary{margin-top:10px;padding:10px;background:rgba(0,0,0,0.2);border-radius:8px;font-size:12px}
-        .summary-row{display:flex;justify-content:space-between;padding:3px 0}
-        .summary-label{color:#666}
-        .buy .summary-value{color:#68d391}
-        .sell .summary-value{color:#fc8181}
-        .last-update{text-align:center;color:#555;font-size:11px;margin-top:15px}
-        .load-more{text-align:center;padding:10px}
-        .skeleton{background:linear-gradient(90deg,#1a1a2e 25%,#2d2d44 50%,#1a1a2e 75%);background-size:200% 100%;animation:shimmer 1.5s infinite}
+        
+        /* Price Display */
+        .price-bar{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;padding:12px 15px;background:linear-gradient(135deg,rgba(0,255,136,.05),rgba(255,68,102,.05));border-radius:10px;margin-bottom:10px;align-items:center}
+        .price-item{text-align:center}
+        .price-item:first-child{text-align:left}
+        .price-item:last-child{text-align:right}
+        .price-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+        .price-value{font-size:18px;font-weight:700;font-family:'SF Mono',Consolas,monospace;margin-top:2px}
+        .price-value.buy{color:var(--buy)}
+        .price-value.sell{color:var(--sell)}
+        .price-value.spread{color:var(--warning);font-size:14px}
+        
+        /* Tables Container */
+        .tables{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:10px}
+        .table-card{background:var(--card);border-radius:10px;border:1px solid var(--border);overflow:hidden;contain:layout style paint}
+        .table-header{display:flex;justify-content:space-between;align-items:center;padding:12px 15px;border-bottom:2px solid}
+        .table-card.buy .table-header{border-color:var(--buy)}
+        .table-card.sell .table-header{border-color:var(--sell)}
+        .table-title{font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px}
+        .table-card.buy .table-title{color:var(--buy)}
+        .table-card.sell .table-title{color:var(--sell)}
+        .count-badge{font-size:11px;padding:3px 10px;border-radius:12px;font-weight:600}
+        .table-card.buy .count-badge{background:rgba(0,255,136,.1);color:var(--buy)}
+        .table-card.sell .count-badge{background:rgba(255,68,102,.1);color:var(--sell)}
+        
+        /* Virtual Scroll Container */
+        .table-scroll{height:350px;overflow-y:auto;overflow-x:hidden;contain:strict}
+        .table-scroll::-webkit-scrollbar{width:4px}
+        .table-scroll::-webkit-scrollbar-track{background:var(--bg)}
+        .table-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+        
+        /* Table */
+        table{width:100%;border-collapse:collapse;table-layout:fixed}
+        th{position:sticky;top:0;background:var(--bg);padding:8px 10px;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:600;text-align:right;z-index:1}
+        th:first-child{width:35px;text-align:center}
+        td{padding:5px 10px;font-size:12px;text-align:right;border-bottom:1px solid rgba(255,255,255,.02);font-family:'SF Mono',Consolas,monospace;font-variant-numeric:tabular-nums}
+        td:first-child{text-align:center;color:var(--muted);font-size:10px}
+        .table-card.buy td:nth-child(2){color:var(--buy);font-weight:600}
+        .table-card.sell td:nth-child(2){color:var(--sell);font-weight:600}
+        tr{transition:background .1s}
+        tr:hover{background:rgba(255,255,255,.03)}
+        
+        /* Depth Bar */
+        .depth-bar{position:absolute;top:0;bottom:0;opacity:.1;pointer-events:none}
+        .table-card.buy .depth-bar{right:0;background:linear-gradient(to left,var(--buy),transparent)}
+        .table-card.sell .depth-bar{right:0;background:linear-gradient(to left,var(--sell),transparent)}
+        td.has-depth{position:relative}
+        
+        /* Summary */
+        .summary{padding:10px 15px;background:rgba(0,0,0,.2);font-size:11px}
+        .summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+        .summary-item{text-align:center}
+        .summary-label{color:var(--muted);font-size:9px;text-transform:uppercase}
+        .summary-value{font-weight:700;margin-top:2px;font-family:'SF Mono',Consolas,monospace}
+        .table-card.buy .summary-value{color:var(--buy)}
+        .table-card.sell .summary-value{color:var(--sell)}
+        
+        /* Footer */
+        .footer{text-align:center;padding:15px;color:var(--muted);font-size:10px}
+        .footer a{color:var(--accent);text-decoration:none}
+        .perf-stats{display:flex;justify-content:center;gap:20px;margin-top:5px;font-family:'SF Mono',Consolas,monospace}
+        .perf-stat{display:flex;align-items:center;gap:4px}
+        .perf-stat.fast{color:var(--buy)}
+        .perf-stat.medium{color:var(--warning)}
+        .perf-stat.slow{color:var(--sell)}
+        
+        /* Loading Skeleton */
+        .skeleton{background:linear-gradient(90deg,var(--bg) 25%,var(--border) 50%,var(--bg) 75%);background-size:200% 100%;animation:shimmer .8s infinite linear}
         @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-        .skeleton-row{height:28px;margin:4px 0;border-radius:4px}
+        .skeleton-row{height:24px;margin:3px 10px;border-radius:3px}
+        
+        /* Responsive */
+        @media(max-width:768px){
+            .tables{grid-template-columns:1fr}
+            .price-bar{grid-template-columns:1fr 1fr;gap:8px}
+            .price-item:first-child,.price-item:last-child{text-align:center}
+            .price-item.spread-item{grid-column:span 2}
+        }
     </style>
 </head>
 <body>
+    <div class="header">
+        <div class="logo">
+            ⚡ HYPER ORDER BOOK
+            <span class="badge">ULTRA FAST</span>
+        </div>
+        <div class="speed-indicator">
+            <span><span class="dot" id="wsStatus"></span> <span id="wsText">Connecting...</span></span>
+            <span>🚀 <span id="latency">--</span>ms</span>
+            <span>📊 <span id="rps">0</span> req/s</span>
+        </div>
+    </div>
+    
     <div class="controls">
-        <h2>📊 Order Book Indodax</h2>
-        <p class="subtitle">Ultra Fast Mode v2 - Multi Proxy</p>
-        <div class="dropdown">
-            <label>🪙 Koin:</label>
-            <div class="select-wrapper">
-                <select id="pairSelect"><option value="">Loading...</option></select>
-                <div class="search-dropdown" id="searchDropdown">
-                    <input type="text" id="searchInput" placeholder="🔍 Cari..." autocomplete="off">
-                    <div class="search-options" id="searchOptions"></div>
-                    <div class="no-result" id="noResult">Tidak ditemukan</div>
+        <div class="select-wrap">
+            <select id="pairSelect"></select>
+        </div>
+        <button class="btn btn-primary" id="refreshBtn">⚡ REFRESH</button>
+        <span class="status-badge" id="status"></span>
+    </div>
+    
+    <div class="price-bar" id="priceBar" style="display:none">
+        <div class="price-item">
+            <div class="price-label">Best Bid</div>
+            <div class="price-value buy" id="bestBid">-</div>
+        </div>
+        <div class="price-item spread-item">
+            <div class="price-label">Spread</div>
+            <div class="price-value spread" id="spread">-</div>
+        </div>
+        <div class="price-item">
+            <div class="price-label">Best Ask</div>
+            <div class="price-value sell" id="bestAsk">-</div>
+        </div>
+    </div>
+    
+    <div class="tables">
+        <div class="table-card buy">
+            <div class="table-header">
+                <span class="table-title">📈 BUY ORDERS</span>
+                <span class="count-badge" id="buyCount">0</span>
+            </div>
+            <div class="table-scroll gpu" id="buyScroll">
+                <table>
+                    <thead><tr><th>#</th><th>Price (IDR)</th><th>Amount</th><th>Total</th></tr></thead>
+                    <tbody id="buyBody"></tbody>
+                </table>
+            </div>
+            <div class="summary">
+                <div class="summary-grid">
+                    <div class="summary-item"><div class="summary-label">Orders</div><div class="summary-value" id="buyOrders">-</div></div>
+                    <div class="summary-item"><div class="summary-label">Volume</div><div class="summary-value" id="buyVol">-</div></div>
+                    <div class="summary-item"><div class="summary-label">Value</div><div class="summary-value" id="buyVal">-</div></div>
                 </div>
             </div>
-            <button class="btn" id="refreshBtn" onclick="refresh()">🔄 Refresh</button>
-            <span class="status" id="status"></span>
-        </div>
-        <p class="proxy-info" id="proxyInfo"></p>
-    </div>
-    
-    <div class="price-info" id="priceInfo">
-        <div class="price-box buy"><div class="label">Best Bid</div><div class="value" id="highestBuy">-</div></div>
-        <div class="price-box spread"><div class="label">Spread</div><div class="value" id="spread">-</div></div>
-        <div class="price-box sell"><div class="label">Best Ask</div><div class="value" id="lowestSell">-</div></div>
-    </div>
-    
-    <div class="container">
-        <div class="table-wrapper buy">
-            <div class="table-header">
-                <h3>📈 BUY</h3>
-                <span class="order-count" id="buyCount">0</span>
-            </div>
-            <div class="table-scroll">
-                <table><thead><tr><th class="rn">#</th><th>Harga</th><th>Volume</th><th>Total</th></tr></thead><tbody id="buyBody"></tbody></table>
-            </div>
-            <div class="load-more" id="buyMore" style="display:none"><button class="btn btn-sm" onclick="showAll('buy')">Tampilkan Semua</button></div>
-            <div class="summary">
-                <div class="summary-row"><span class="summary-label">Orders:</span><span class="summary-value" id="buyOrders">-</span></div>
-                <div class="summary-row"><span class="summary-label">Volume:</span><span class="summary-value" id="buyVol">-</span></div>
-                <div class="summary-row"><span class="summary-label">Value:</span><span class="summary-value" id="buyVal">-</span></div>
-            </div>
         </div>
         
-        <div class="table-wrapper sell">
+        <div class="table-card sell">
             <div class="table-header">
-                <h3>📉 SELL</h3>
-                <span class="order-count" id="sellCount">0</span>
+                <span class="table-title">📉 SELL ORDERS</span>
+                <span class="count-badge" id="sellCount">0</span>
             </div>
-            <div class="table-scroll">
-                <table><thead><tr><th class="rn">#</th><th>Harga</th><th>Volume</th><th>Total</th></tr></thead><tbody id="sellBody"></tbody></table>
+            <div class="table-scroll gpu" id="sellScroll">
+                <table>
+                    <thead><tr><th>#</th><th>Price (IDR)</th><th>Amount</th><th>Total</th></tr></thead>
+                    <tbody id="sellBody"></tbody>
+                </table>
             </div>
-            <div class="load-more" id="sellMore" style="display:none"><button class="btn btn-sm" onclick="showAll('sell')">Tampilkan Semua</button></div>
             <div class="summary">
-                <div class="summary-row"><span class="summary-label">Orders:</span><span class="summary-value" id="sellOrders">-</span></div>
-                <div class="summary-row"><span class="summary-label">Volume:</span><span class="summary-value" id="sellVol">-</span></div>
-                <div class="summary-row"><span class="summary-label">Value:</span><span class="summary-value" id="sellVal">-</span></div>
+                <div class="summary-grid">
+                    <div class="summary-item"><div class="summary-label">Orders</div><div class="summary-value" id="sellOrders">-</div></div>
+                    <div class="summary-item"><div class="summary-label">Volume</div><div class="summary-value" id="sellVol">-</div></div>
+                    <div class="summary-item"><div class="summary-label">Value</div><div class="summary-value" id="sellVal">-</div></div>
+                </div>
             </div>
         </div>
     </div>
     
-    <p class="last-update" id="lastUpdate"></p>
+    <div class="footer">
+        <div>Last Update: <span id="lastUpdate">-</span> | Data by <a href="https://indodax.com" target="_blank">Indodax</a></div>
+        <div class="perf-stats">
+            <span class="perf-stat" id="fetchTime">⏱️ Fetch: --ms</span>
+            <span class="perf-stat" id="renderTime">🎨 Render: --ms</span>
+            <span class="perf-stat" id="totalTime">⚡ Total: --ms</span>
+        </div>
+    </div>
 
 <script>
-// ========== MULTI PROXY SYSTEM ==========
-const PROXIES = [
-    { name: 'Direct', fn: url => url },
-    { name: 'corsproxy.io', fn: url => `https://corsproxy.io/?${encodeURIComponent(url)}` },
-    { name: 'allorigins', fn: url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}` },
-    { name: 'cors-anywhere', fn: url => `https://cors-anywhere.herokuapp.com/${url}` },
-];
+// ============================================
+// 🚀 HYPER SPEED ENGINE v3.0
+// ============================================
 
-const TIMEOUT = 6000; // 6 detik timeout
-const LIMIT = 100;
-let pairs = [], currentId = '', buyData = [], sellData = [], coinName = '';
-let currentProxy = 0;
-let pairsCache = null;
-
-const $ = id => document.getElementById(id);
-const sel = $('pairSelect'), buyBody = $('buyBody'), sellBody = $('sellBody');
-const status = $('status'), proxyInfo = $('proxyInfo');
-const searchDrop = $('searchDropdown'), searchIn = $('searchInput'), searchOpts = $('searchOptions'), noRes = $('noResult');
-
-// ========== SKELETON LOADING ==========
-function showSkeleton(el, count = 5) {
-    el.innerHTML = Array(count).fill('<tr><td colspan="4"><div class="skeleton skeleton-row"></div></td></tr>').join('');
-}
-
-// ========== FETCH WITH TIMEOUT & RETRY ==========
-async function fetchWithTimeout(url, timeout = TIMEOUT) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
-    
-    try {
-        const res = await fetch(url, { 
-            signal: controller.signal,
-            headers: { 'Accept': 'application/json' }
-        });
-        clearTimeout(timeoutId);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return await res.json();
-    } catch (e) {
-        clearTimeout(timeoutId);
-        throw e;
-    }
-}
-
-async function fetchAPI(url, retries = 3) {
-    let lastError;
-    
-    // Coba semua proxy
-    for (let attempt = 0; attempt < retries; attempt++) {
-        for (let i = 0; i < PROXIES.length; i++) {
-            const proxyIndex = (currentProxy + i) % PROXIES.length;
-            const proxy = PROXIES[proxyIndex];
-            
-            try {
-                const proxyUrl = proxy.fn(url);
-                console.log(`Trying ${proxy.name}...`, proxyUrl);
-                
-                const startTime = Date.now();
-                const data = await fetchWithTimeout(proxyUrl);
-                const elapsed = Date.now() - startTime;
-                
-                // Sukses! Ingat proxy ini untuk request berikutnya
-                currentProxy = proxyIndex;
-                proxyInfo.textContent = `✓ ${proxy.name} (${elapsed}ms)`;
-                proxyInfo.style.color = '#68d391';
-                
-                return data;
-            } catch (e) {
-                console.warn(`${proxy.name} failed:`, e.message);
-                lastError = e;
-                continue;
-            }
-        }
-    }
-    
-    throw lastError || new Error('All proxies failed');
-}
-
-// ========== STATUS DISPLAY ==========
-function setStatus(msg, type = 'loading') {
-    if (type === 'loading') {
-        status.innerHTML = `<span class="spinner"></span> ${msg}`;
-    } else {
-        status.textContent = msg;
-    }
-    status.className = 'status ' + type;
-    
-    if (type === 'success') {
-        setTimeout(() => {
-            status.textContent = '';
-            status.className = 'status';
-        }, 2000);
-    }
-}
-
-// ========== SEARCHABLE DROPDOWN ==========
-sel.onclick = e => {
-    e.preventDefault();
-    searchDrop.classList.add('show');
-    searchIn.value = '';
-    filter('');
-    searchIn.focus();
+const CONFIG = {
+    PROXIES: [
+        url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+        url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+        url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+    ],
+    TIMEOUT: 4000,
+    MAX_ROWS: 150,
+    CACHE_TTL: 3600000, // 1 jam
+    DEBOUNCE: 100
 };
 
-searchIn.oninput = () => filter(searchIn.value);
-
-document.onclick = e => {
-    if (!e.target.closest('.select-wrapper')) {
-        searchDrop.classList.remove('show');
+// ============================================
+// 💾 TURBO CACHE - IndexedDB + Memory
+// ============================================
+class TurboCache {
+    constructor() {
+        this.mem = new Map();
+        this.dbName = 'HyperOrderBook';
+        this.dbReady = this.initDB();
     }
-};
-
-function filter(t) {
-    let hasResult = false;
-    searchOpts.querySelectorAll('.search-option').forEach(o => {
-        const match = o.textContent.toLowerCase().includes(t.toLowerCase());
-        o.classList.toggle('hidden', !match);
-        if (match) hasResult = true;
-    });
-    noRes.style.display = hasResult ? 'none' : 'block';
-}
-
-function buildOpts() {
-    searchOpts.innerHTML = pairs.map(p => 
-        `<div class="search-option${p.id === currentId ? ' selected' : ''}" data-v="${p.id}">${p.description} (${p.id.toUpperCase()})</div>`
-    ).join('');
     
-    searchOpts.onclick = e => {
-        if (e.target.classList.contains('search-option')) {
-            const v = e.target.dataset.v;
-            sel.value = v;
-            searchDrop.classList.remove('show');
-            searchOpts.querySelectorAll('.search-option').forEach(o => 
-                o.classList.toggle('selected', o.dataset.v === v)
-            );
-            load(v);
-        }
-    };
-}
-
-// ========== INITIALIZATION ==========
-async function init() {
-    setStatus('Memuat pairs...');
-    showSkeleton(buyBody, 8);
-    showSkeleton(sellBody, 8);
-    
-    try {
-        // Coba load dari cache dulu
-        const cached = localStorage.getItem('indodax_pairs');
-        if (cached) {
-            try {
-                const { data, timestamp } = JSON.parse(cached);
-                // Cache valid 1 jam
-                if (Date.now() - timestamp < 3600000) {
-                    pairs = data;
-                    console.log('Using cached pairs');
+    async initDB() {
+        return new Promise((resolve, reject) => {
+            const req = indexedDB.open(this.dbName, 1);
+            req.onerror = () => resolve(null);
+            req.onsuccess = () => resolve(req.result);
+            req.onupgradeneeded = e => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains('cache')) {
+                    db.createObjectStore('cache', { keyPath: 'key' });
                 }
-            } catch (e) {}
+            };
+        });
+    }
+    
+    async get(key) {
+        // Memory first (fastest)
+        if (this.mem.has(key)) {
+            const item = this.mem.get(key);
+            if (Date.now() < item.exp) return item.data;
+            this.mem.delete(key);
         }
         
-        // Jika tidak ada cache, fetch dari API
-        if (!pairs.length) {
-            const data = await fetchAPI('https://indodax.com/api/pairs');
-            pairs = data.sort((a, b) => a.description.localeCompare(b.description));
+        // IndexedDB fallback
+        const db = await this.dbReady;
+        if (!db) return null;
+        
+        return new Promise(resolve => {
+            try {
+                const tx = db.transaction('cache', 'readonly');
+                const store = tx.objectStore('cache');
+                const req = store.get(key);
+                req.onsuccess = () => {
+                    const item = req.result;
+                    if (item && Date.now() < item.exp) {
+                        this.mem.set(key, item); // Promote to memory
+                        resolve(item.data);
+                    } else {
+                        resolve(null);
+                    }
+                };
+                req.onerror = () => resolve(null);
+            } catch (e) { resolve(null); }
+        });
+    }
+    
+    async set(key, data, ttl = CONFIG.CACHE_TTL) {
+        const item = { key, data, exp: Date.now() + ttl };
+        this.mem.set(key, item);
+        
+        const db = await this.dbReady;
+        if (!db) return;
+        
+        try {
+            const tx = db.transaction('cache', 'readwrite');
+            tx.objectStore('cache').put(item);
+        } catch (e) {}
+    }
+}
+
+// ============================================
+// ⚡ HYPER FETCH - Race All Proxies
+// ============================================
+class HyperFetch {
+    constructor() {
+        this.proxyStats = CONFIG.PROXIES.map(() => ({ success: 0, fail: 0, avgTime: 1000 }));
+    }
+    
+    async fetch(url) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), CONFIG.TIMEOUT);
+        
+        // Sort proxies by performance
+        const sortedProxies = CONFIG.PROXIES
+            .map((fn, i) => ({ fn, i, score: this.proxyStats[i].avgTime * (1 + this.proxyStats[i].fail / 10) }))
+            .sort((a, b) => a.score - b.score);
+        
+        // Race all proxies simultaneously!
+        const promises = sortedProxies.map(async ({ fn, i }) => {
+            const start = performance.now();
+            try {
+                const res = await fetch(fn(url), {
+                    signal: controller.signal,
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                const elapsed = performance.now() - start;
+                
+                // Update stats
+                this.proxyStats[i].success++;
+                this.proxyStats[i].avgTime = (this.proxyStats[i].avgTime * 0.7) + (elapsed * 0.3);
+                
+                return { data, elapsed, proxy: i };
+            } catch (e) {
+                this.proxyStats[i].fail++;
+                throw e;
+            }
+        });
+        
+        try {
+            const result = await Promise.any(promises);
+            clearTimeout(timeout);
+            controller.abort(); // Cancel other requests
+            return result;
+        } catch (e) {
+            clearTimeout(timeout);
+            throw new Error('All proxies failed');
+        }
+    }
+}
+
+// ============================================
+// 🎨 HYPER RENDERER - Optimized DOM
+// ============================================
+class HyperRenderer {
+    constructor() {
+        this.buyBody = document.getElementById('buyBody');
+        this.sellBody = document.getElementById('sellBody');
+        this.rowPool = { buy: [], sell: [] };
+        this.lastBuyData = null;
+        this.lastSellData = null;
+    }
+    
+    // Pre-create row elements for reuse
+    createRow() {
+        const tr = document.createElement('tr');
+        tr.innerHTML = '<td></td><td></td><td></td><td class="has-depth"><span class="depth-bar"></span><span class="val"></span></td>';
+        return tr;
+    }
+    
+    getRow(type) {
+        if (this.rowPool[type].length > 0) {
+            return this.rowPool[type].pop();
+        }
+        return this.createRow();
+    }
+    
+    returnRow(type, row) {
+        if (this.rowPool[type].length < 200) {
+            this.rowPool[type].push(row);
+        }
+    }
+    
+    // Ultra-fast render with DocumentFragment and diff
+    render(type, data, coinName, maxDepth) {
+        const body = type === 'buy' ? this.buyBody : this.sellBody;
+        const lastData = type === 'buy' ? this.lastBuyData : this.lastSellData;
+        
+        // Skip if data unchanged
+        if (lastData && JSON.stringify(data.slice(0, 50)) === JSON.stringify(lastData.slice(0, 50))) {
+            return;
+        }
+        
+        if (type === 'buy') this.lastBuyData = data.slice(0, 50);
+        else this.lastSellData = data.slice(0, 50);
+        
+        const fragment = document.createDocumentFragment();
+        const display = data.slice(0, CONFIG.MAX_ROWS);
+        
+        let totalVol = 0, totalVal = 0;
+        
+        // Calculate totals first for depth bars
+        for (let i = 0; i < data.length; i++) {
+            totalVol += +data[i][1];
+            totalVal += (+data[i][0]) * (+data[i][1]);
+        }
+        
+        // Build rows
+        for (let i = 0; i < display.length; i++) {
+            const [price, amount] = display[i];
+            const p = +price, a = +amount, t = p * a;
+            const depthPct = Math.min((t / maxDepth) * 100, 100);
             
-            // Simpan ke cache
-            localStorage.setItem('indodax_pairs', JSON.stringify({
-                data: pairs,
-                timestamp: Date.now()
-            }));
+            const row = this.getRow(type);
+            const cells = row.cells;
+            
+            cells[0].textContent = i + 1;
+            cells[1].textContent = this.formatPrice(p);
+            cells[2].textContent = this.formatAmount(a);
+            cells[3].querySelector('.val').textContent = this.formatCompact(t);
+            cells[3].querySelector('.depth-bar').style.width = depthPct + '%';
+            
+            fragment.appendChild(row);
         }
         
-        sel.innerHTML = pairs.map(p => 
+        // Return old rows to pool
+        while (body.firstChild) {
+            const row = body.firstChild;
+            body.removeChild(row);
+            this.returnRow(type, row);
+        }
+        
+        // Single DOM update
+        body.appendChild(fragment);
+        
+        // Update summary
+        document.getElementById(type + 'Count').textContent = data.length;
+        document.getElementById(type + 'Orders').textContent = data.length;
+        document.getElementById(type + 'Vol').textContent = this.formatAmount(totalVol) + ' ' + coinName;
+        document.getElementById(type + 'Val').textContent = this.formatValue(totalVal);
+    }
+    
+    showSkeleton(body, count = 10) {
+        body.innerHTML = Array(count).fill(
+            '<tr><td colspan="4"><div class="skeleton skeleton-row"></div></td></tr>'
+        ).join('');
+    }
+    
+    formatPrice(n) {
+        return n >= 1000 ? n.toLocaleString('id-ID') : n.toFixed(n < 1 ? 8 : 2);
+    }
+    
+    formatAmount(n) {
+        if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+        if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+        if (n >= 1e3) return (n / 1e3).toFixed(2) + 'K';
+        if (n >= 1) return n.toFixed(2);
+        if (n >= 0.0001) return n.toFixed(4);
+        return n.toFixed(8);
+    }
+    
+    formatCompact(n) {
+        if (n >= 1e12) return (n / 1e12).toFixed(1) + 'T';
+        if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B';
+        if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+        if (n >= 1e3) return (n / 1e3).toFixed(0) + 'K';
+        return n.toFixed(0);
+    }
+    
+    formatValue(n) {
+        if (n >= 1e12) return 'Rp' + (n / 1e12).toFixed(2) + 'T';
+        if (n >= 1e9) return 'Rp' + (n / 1e9).toFixed(2) + 'M';
+        if (n >= 1e6) return 'Rp' + (n / 1e6).toFixed(2) + 'Jt';
+        return 'Rp' + n.toLocaleString('id-ID');
+    }
+}
+
+// ============================================
+// 🎮 MAIN APPLICATION
+// ============================================
+class HyperOrderBook {
+    constructor() {
+        this.cache = new TurboCache();
+        this.fetcher = new HyperFetch();
+        this.renderer = new HyperRenderer();
+        
+        this.pairs = [];
+        this.currentPair = '';
+        this.coinName = '';
+        this.requestCount = 0;
+        this.lastRequestTime = Date.now();
+        
+        this.elements = {
+            select: document.getElementById('pairSelect'),
+            refreshBtn: document.getElementById('refreshBtn'),
+            status: document.getElementById('status'),
+            wsStatus: document.getElementById('wsStatus'),
+            wsText: document.getElementById('wsText'),
+            latency: document.getElementById('latency'),
+            rps: document.getElementById('rps'),
+            priceBar: document.getElementById('priceBar'),
+            bestBid: document.getElementById('bestBid'),
+            bestAsk: document.getElementById('bestAsk'),
+            spread: document.getElementById('spread'),
+            buyBody: document.getElementById('buyBody'),
+            sellBody: document.getElementById('sellBody'),
+            lastUpdate: document.getElementById('lastUpdate'),
+            fetchTime: document.getElementById('fetchTime'),
+            renderTime: document.getElementById('renderTime'),
+            totalTime: document.getElementById('totalTime')
+        };
+        
+        this.init();
+    }
+    
+    async init() {
+        this.setStatus('Initializing...', 'loading');
+        this.renderer.showSkeleton(this.elements.buyBody);
+        this.renderer.showSkeleton(this.elements.sellBody);
+        
+        // Start RPS counter
+        setInterval(() => {
+            const elapsed = (Date.now() - this.lastRequestTime) / 1000;
+            const rps = elapsed > 0 ? (this.requestCount / elapsed).toFixed(1) : 0;
+            this.elements.rps.textContent = rps;
+            if (elapsed > 5) {
+                this.requestCount = 0;
+                this.lastRequestTime = Date.now();
+            }
+        }, 1000);
+        
+        try {
+            await this.loadPairs();
+            await this.loadOrderBook(this.currentPair);
+            
+            this.elements.wsStatus.classList.remove('slow', 'error');
+            this.elements.wsText.textContent = 'Connected';
+        } catch (e) {
+            this.setStatus('❌ ' + e.message, 'error');
+            this.elements.wsStatus.classList.add('error');
+            this.elements.wsText.textContent = 'Error';
+        }
+        
+        // Event listeners
+        this.elements.select.onchange = () => this.loadOrderBook(this.elements.select.value);
+        this.elements.refreshBtn.onclick = () => this.loadOrderBook(this.currentPair);
+    }
+    
+    async loadPairs() {
+        // Try cache first
+        let pairs = await this.cache.get('pairs');
+        
+        if (!pairs) {
+            this.setStatus('Loading pairs...', 'loading');
+            const result = await this.fetcher.fetch('https://indodax.com/api/pairs');
+            pairs = result.data.sort((a, b) => a.description.localeCompare(b.description));
+            await this.cache.set('pairs', pairs);
+        }
+        
+        this.pairs = pairs;
+        this.elements.select.innerHTML = pairs.map(p => 
             `<option value="${p.id}">${p.description} (${p.id.toUpperCase()})</option>`
         ).join('');
         
-        // Default ke BTC
+        // Default to BTC
         const btc = pairs.find(p => p.id === 'btcidr');
-        currentId = btc ? btc.id : pairs[0].id;
-        sel.value = currentId;
-        buildOpts();
-        
-        await load(currentId);
-        
-    } catch (e) {
-        console.error('Init error:', e);
-        setStatus('❌ ' + e.message, 'error');
-        
-        // Fallback pairs
-        pairs = [
-            { id: 'btcidr', description: 'Bitcoin/IDR' },
-            { id: 'ethidr', description: 'Ethereum/IDR' },
-            { id: 'dogeidr', description: 'Dogecoin/IDR' },
-            { id: 'shibbidr', description: 'Shiba Inu/IDR' },
-            { id: 'xrpidr', description: 'Ripple/IDR' }
-        ];
-        sel.innerHTML = pairs.map(p => `<option value="${p.id}">${p.description}</option>`).join('');
-        currentId = 'btcidr';
-        buildOpts();
-        
-        // Retry load setelah 2 detik
-        setTimeout(() => load('btcidr'), 2000);
+        this.currentPair = btc ? btc.id : pairs[0].id;
+        this.elements.select.value = this.currentPair;
     }
-}
-
-// ========== LOAD ORDER BOOK ==========
-async function load(id) {
-    currentId = id;
-    const p = pairs.find(x => x.id === id);
-    coinName = p ? p.description.split('/')[0].trim() : id.replace('idr', '').toUpperCase();
     
-    setStatus('Memuat order book...');
-    $('refreshBtn').disabled = true;
-    showSkeleton(buyBody, 8);
-    showSkeleton(sellBody, 8);
-    
-    try {
-        const data = await fetchAPI(`https://indodax.com/api/depth/${id}`);
+    async loadOrderBook(pairId) {
+        this.currentPair = pairId;
+        const pair = this.pairs.find(p => p.id === pairId);
+        this.coinName = pair ? pair.description.split('/')[0].trim() : pairId.replace('idr', '').toUpperCase();
         
-        buyData = data.buy || [];
-        sellData = data.sell || [];
+        this.elements.refreshBtn.disabled = true;
+        this.setStatus('Loading...', 'loading');
+        this.elements.wsStatus.classList.add('slow');
+        this.elements.wsStatus.classList.remove('error');
         
-        // Price info
-        if (buyData.length && sellData.length) {
-            const highBid = +buyData[0][0];
-            const lowAsk = +sellData[0][0];
-            const spread = lowAsk - highBid;
+        const totalStart = performance.now();
+        
+        try {
+            // Fetch
+            const fetchStart = performance.now();
+            const result = await this.fetcher.fetch(`https://indodax.com/api/depth/${pairId}`);
+            const fetchTime = performance.now() - fetchStart;
+            this.requestCount++;
             
-            $('highestBuy').textContent = fmt(highBid);
-            $('lowestSell').textContent = fmt(lowAsk);
-            $('spread').textContent = fmt(spread) + ' (' + (spread / lowAsk * 100).toFixed(2) + '%)';
-            $('priceInfo').style.display = 'flex';
+            const { buy = [], sell = [] } = result.data;
+            
+            // Update latency
+            this.elements.latency.textContent = Math.round(result.elapsed);
+            this.elements.fetchTime.textContent = `⏱️ Fetch: ${Math.round(fetchTime)}ms`;
+            this.elements.fetchTime.className = 'perf-stat ' + this.getSpeedClass(fetchTime);
+            
+            // Update prices
+            if (buy.length && sell.length) {
+                const bestBid = +buy[0][0];
+                const bestAsk = +sell[0][0];
+                const spread = bestAsk - bestBid;
+                const spreadPct = ((spread / bestAsk) * 100).toFixed(3);
+                
+                this.elements.bestBid.textContent = bestBid.toLocaleString('id-ID');
+                this.elements.bestAsk.textContent = bestAsk.toLocaleString('id-ID');
+                this.elements.spread.textContent = `${spread.toLocaleString('id-ID')} (${spreadPct}%)`;
+                this.elements.priceBar.style.display = 'grid';
+            }
+            
+            // Render - use requestAnimationFrame for smooth rendering
+            const renderStart = performance.now();
+            
+            // Calculate max depth for depth bars
+            const maxBuyDepth = buy.slice(0, 20).reduce((sum, r) => sum + (+r[0] * +r[1]), 0) / 20;
+            const maxSellDepth = sell.slice(0, 20).reduce((sum, r) => sum + (+r[0] * +r[1]), 0) / 20;
+            
+            requestAnimationFrame(() => {
+                this.renderer.render('buy', buy, this.coinName, maxBuyDepth);
+                this.renderer.render('sell', sell, this.coinName, maxSellDepth);
+                
+                const renderTime = performance.now() - renderStart;
+                const totalTime = performance.now() - totalStart;
+                
+                this.elements.renderTime.textContent = `🎨 Render: ${Math.round(renderTime)}ms`;
+                this.elements.renderTime.className = 'perf-stat ' + this.getSpeedClass(renderTime);
+                
+                this.elements.totalTime.textContent = `⚡ Total: ${Math.round(totalTime)}ms`;
+                this.elements.totalTime.className = 'perf-stat ' + this.getSpeedClass(totalTime);
+                
+                this.elements.lastUpdate.textContent = new Date().toLocaleTimeString('id-ID') + 
+                    ` | ${buy.length + sell.length} orders`;
+            });
+            
+            this.setStatus('✓ Ready', 'success');
+            this.elements.wsStatus.classList.remove('slow', 'error');
+            
+        } catch (e) {
+            console.error(e);
+            this.setStatus('❌ ' + e.message, 'error');
+            this.elements.wsStatus.classList.add('error');
+            this.elements.wsStatus.classList.remove('slow');
+            
+            this.elements.buyBody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--sell)">
+                ❌ Failed to load<br><small>${e.message}</small>
+            </td></tr>`;
+            this.elements.sellBody.innerHTML = this.elements.buyBody.innerHTML;
         }
         
-        render('buy', LIMIT);
-        render('sell', LIMIT);
-        
-        $('lastUpdate').textContent = '🕐 ' + new Date().toLocaleTimeString('id-ID') + 
-            ' | Total: ' + (buyData.length + sellData.length) + ' orders';
-        
-        setStatus('✓ Berhasil', 'success');
-        
-    } catch (e) {
-        console.error('Load error:', e);
-        setStatus('❌ ' + (e.message || 'Gagal memuat'), 'error');
-        
-        buyBody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#fc8181;padding:20px">
-            ❌ Gagal memuat data<br>
-            <button class="btn btn-sm" style="margin-top:10px" onclick="load('${id}')">🔄 Coba Lagi</button>
-        </td></tr>`;
-        sellBody.innerHTML = buyBody.innerHTML;
+        this.elements.refreshBtn.disabled = false;
     }
     
-    $('refreshBtn').disabled = false;
-}
-
-// ========== RENDER TABLE ==========
-function render(type, limit) {
-    const data = type === 'buy' ? buyData : sellData;
-    const body = type === 'buy' ? buyBody : sellBody;
-    const show = limit ? data.slice(0, limit) : data;
+    getSpeedClass(ms) {
+        if (ms < 100) return 'fast';
+        if (ms < 500) return 'medium';
+        return 'slow';
+    }
     
-    let vol = 0, val = 0, html = '';
-    
-    data.forEach((row, i) => {
-        const price = +row[0];
-        const volume = +row[1];
-        const total = price * volume;
-        
-        vol += volume;
-        val += total;
-        
-        if (i < show.length) {
-            html += `<tr>
-                <td class="rn">${i + 1}</td>
-                <td>${fmt(price)}</td>
-                <td>${fmtV(volume)}</td>
-                <td>${fmtC(total)}</td>
-            </tr>`;
+    setStatus(text, type) {
+        const el = this.elements.status;
+        el.className = 'status-badge ' + type;
+        if (type === 'loading') {
+            el.innerHTML = `<span class="spinner"></span> ${text}`;
+        } else {
+            el.textContent = text;
         }
-    });
-    
-    body.innerHTML = html || '<tr><td colspan="4" style="text-align:center;color:#666">Tidak ada data</td></tr>';
-    
-    $(type + 'Count').textContent = data.length;
-    $(type + 'Orders').textContent = data.length;
-    $(type + 'Vol').textContent = fmtV(vol) + ' ' + coinName;
-    $(type + 'Val').textContent = fmtCF(val);
-    $(type + 'More').style.display = (limit && data.length > limit) ? 'block' : 'none';
+        
+        if (type === 'success') {
+            setTimeout(() => {
+                el.textContent = '';
+                el.className = 'status-badge';
+            }, 2000);
+        }
+    }
 }
 
-function showAll(type) {
-    render(type, 0);
-    $(type + 'More').style.display = 'none';
-}
-
-function refresh() {
-    if (currentId) load(currentId);
-}
-
-// ========== FORMATTERS ==========
-function fmt(n) {
-    return (+n).toLocaleString('id-ID');
-}
-
-function fmtV(n) {
-    n = +n;
-    if (!n) return '0';
-    if (n < 0.0001) return n.toFixed(8);
-    if (n < 1) return n.toFixed(4);
-    if (n < 1e6) return n.toLocaleString('id-ID', { maximumFractionDigits: 2 });
-    return (n / 1e6).toFixed(2) + 'M';
-}
-
-function fmtC(n) {
-    if (n >= 1e9) return 'Rp' + (n / 1e9).toFixed(1) + 'M';
-    if (n >= 1e6) return 'Rp' + (n / 1e6).toFixed(1) + 'Jt';
-    if (n >= 1e3) return 'Rp' + (n / 1e3).toFixed(0) + 'Rb';
-    return 'Rp' + Math.round(n);
-}
-
-function fmtCF(n) {
-    if (n >= 1e12) return 'Rp' + (n / 1e12).toFixed(2) + ' T';
-    if (n >= 1e9) return 'Rp' + (n / 1e9).toFixed(2) + ' M';
-    if (n >= 1e6) return 'Rp' + (n / 1e6).toFixed(2) + ' Jt';
-    return 'Rp' + Math.round(n).toLocaleString('id-ID');
-}
-
-// ========== EVENT LISTENERS ==========
-sel.onchange = function() { load(this.value); };
-
-// ========== START ==========
-init();
+// ============================================
+// 🚀 LAUNCH!
+// ============================================
+document.addEventListener('DOMContentLoaded', () => {
+    new HyperOrderBook();
+});
 </script>
 </body>
 </html>
