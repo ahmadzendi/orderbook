@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Order Book Indodax - Ultra Fast</title>
+    <title>Order Book Indodax - Ultra Fast v2</title>
     <style>
         *{box-sizing:border-box;margin:0;padding:0}
         body{font-family:system-ui,-apple-system,sans-serif;padding:10px;background:#0f0f1a;color:#fff;min-height:100vh}
@@ -22,15 +22,18 @@
         .search-option:hover,.search-option.selected{background:rgba(0,212,255,0.2)}
         .search-option.hidden{display:none}
         .no-result{padding:10px;text-align:center;color:#666;display:none;font-size:13px}
-        .status{padding:6px 12px;border-radius:5px;font-size:12px;font-weight:bold}
+        .status{padding:6px 12px;border-radius:5px;font-size:12px;font-weight:bold;display:inline-flex;align-items:center;gap:5px}
         .status.loading{background:#f6ad55;color:#000}
         .status.error{background:#fc8181;color:#000}
         .status.success{background:#68d391;color:#000}
-        .btn{padding:10px 20px;background:#00d4ff;color:#000;border:none;border-radius:5px;cursor:pointer;font-weight:bold;font-size:13px}
-        .btn:hover{background:#00a8cc}
-        .btn:disabled{background:#666;cursor:not-allowed}
+        .spinner{width:12px;height:12px;border:2px solid transparent;border-top-color:currentColor;border-radius:50%;animation:spin 0.8s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .btn{padding:10px 20px;background:#00d4ff;color:#000;border:none;border-radius:5px;cursor:pointer;font-weight:bold;font-size:13px;transition:all 0.2s}
+        .btn:hover{background:#00a8cc;transform:scale(1.02)}
+        .btn:disabled{background:#666;cursor:not-allowed;transform:none}
         .btn-sm{padding:6px 12px;font-size:11px;background:#444}
         .btn-sm:hover{background:#555}
+        .proxy-info{text-align:center;font-size:10px;color:#555;margin-top:5px}
         .price-info{display:none;justify-content:center;gap:30px;padding:12px;background:rgba(0,212,255,0.1);border-radius:8px;margin:15px 0;flex-wrap:wrap}
         .price-box{text-align:center}
         .price-box .label{font-size:11px;color:#666}
@@ -63,12 +66,15 @@
         .sell .summary-value{color:#fc8181}
         .last-update{text-align:center;color:#555;font-size:11px;margin-top:15px}
         .load-more{text-align:center;padding:10px}
+        .skeleton{background:linear-gradient(90deg,#1a1a2e 25%,#2d2d44 50%,#1a1a2e 75%);background-size:200% 100%;animation:shimmer 1.5s infinite}
+        @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+        .skeleton-row{height:28px;margin:4px 0;border-radius:4px}
     </style>
 </head>
 <body>
     <div class="controls">
         <h2>📊 Order Book Indodax</h2>
-        <p class="subtitle">Ultra Fast Mode</p>
+        <p class="subtitle">Ultra Fast Mode v2 - Multi Proxy</p>
         <div class="dropdown">
             <label>🪙 Koin:</label>
             <div class="select-wrapper">
@@ -82,6 +88,7 @@
             <button class="btn" id="refreshBtn" onclick="refresh()">🔄 Refresh</button>
             <span class="status" id="status"></span>
         </div>
+        <p class="proxy-info" id="proxyInfo"></p>
     </div>
     
     <div class="price-info" id="priceInfo">
@@ -97,7 +104,7 @@
                 <span class="order-count" id="buyCount">0</span>
             </div>
             <div class="table-scroll">
-                <table><thead><tr><th class="rn">#</th><th>Harga</th><th>Volume</th><th>Total</th></tr></thead><tbody id="buyBody"><tr><td colspan="4" style="text-align:center;color:#666">⏳ Loading...</td></tr></tbody></table>
+                <table><thead><tr><th class="rn">#</th><th>Harga</th><th>Volume</th><th>Total</th></tr></thead><tbody id="buyBody"></tbody></table>
             </div>
             <div class="load-more" id="buyMore" style="display:none"><button class="btn btn-sm" onclick="showAll('buy')">Tampilkan Semua</button></div>
             <div class="summary">
@@ -113,7 +120,7 @@
                 <span class="order-count" id="sellCount">0</span>
             </div>
             <div class="table-scroll">
-                <table><thead><tr><th class="rn">#</th><th>Harga</th><th>Volume</th><th>Total</th></tr></thead><tbody id="sellBody"><tr><td colspan="4" style="text-align:center;color:#666">⏳ Loading...</td></tr></tbody></table>
+                <table><thead><tr><th class="rn">#</th><th>Harga</th><th>Volume</th><th>Total</th></tr></thead><tbody id="sellBody"></tbody></table>
             </div>
             <div class="load-more" id="sellMore" style="display:none"><button class="btn btn-sm" onclick="showAll('sell')">Tampilkan Semua</button></div>
             <div class="summary">
@@ -127,134 +134,337 @@
     <p class="last-update" id="lastUpdate"></p>
 
 <script>
-const PROXY='https://api.allorigins.win/raw?url=';
-const LIMIT=100;
-let pairs=[],currentId='',buyData=[],sellData=[],coinName='';
+// ========== MULTI PROXY SYSTEM ==========
+const PROXIES = [
+    { name: 'Direct', fn: url => url },
+    { name: 'corsproxy.io', fn: url => `https://corsproxy.io/?${encodeURIComponent(url)}` },
+    { name: 'allorigins', fn: url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}` },
+    { name: 'cors-anywhere', fn: url => `https://cors-anywhere.herokuapp.com/${url}` },
+];
 
-const $=id=>document.getElementById(id);
-const sel=$('pairSelect'),buyBody=$('buyBody'),sellBody=$('sellBody'),status=$('status'),searchDrop=$('searchDropdown'),searchIn=$('searchInput'),searchOpts=$('searchOptions'),noRes=$('noResult');
+const TIMEOUT = 6000; // 6 detik timeout
+const LIMIT = 100;
+let pairs = [], currentId = '', buyData = [], sellData = [], coinName = '';
+let currentProxy = 0;
+let pairsCache = null;
 
-// Searchable dropdown
-sel.onclick=e=>{e.preventDefault();searchDrop.classList.add('show');searchIn.value='';filter('');searchIn.focus()};
-searchIn.oninput=()=>filter(searchIn.value);
-document.onclick=e=>{if(!e.target.closest('.select-wrapper'))searchDrop.classList.remove('show')};
+const $ = id => document.getElementById(id);
+const sel = $('pairSelect'), buyBody = $('buyBody'), sellBody = $('sellBody');
+const status = $('status'), proxyInfo = $('proxyInfo');
+const searchDrop = $('searchDropdown'), searchIn = $('searchInput'), searchOpts = $('searchOptions'), noRes = $('noResult');
 
-function filter(t){
-    let has=0;
-    searchOpts.querySelectorAll('.search-option').forEach(o=>{
-        const m=o.textContent.toLowerCase().includes(t.toLowerCase());
-        o.classList.toggle('hidden',!m);
-        if(m)has=1;
-    });
-    noRes.style.display=has?'none':'block';
+// ========== SKELETON LOADING ==========
+function showSkeleton(el, count = 5) {
+    el.innerHTML = Array(count).fill('<tr><td colspan="4"><div class="skeleton skeleton-row"></div></td></tr>').join('');
 }
 
-function buildOpts(){
-    searchOpts.innerHTML=pairs.map(p=>`<div class="search-option${p.id===currentId?' selected':''}" data-v="${p.id}">${p.description} (${p.id.toUpperCase()})</div>`).join('');
-    searchOpts.onclick=e=>{
-        if(e.target.classList.contains('search-option')){
-            const v=e.target.dataset.v;
-            sel.value=v;
+// ========== FETCH WITH TIMEOUT & RETRY ==========
+async function fetchWithTimeout(url, timeout = TIMEOUT) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    
+    try {
+        const res = await fetch(url, { 
+            signal: controller.signal,
+            headers: { 'Accept': 'application/json' }
+        });
+        clearTimeout(timeoutId);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+    } catch (e) {
+        clearTimeout(timeoutId);
+        throw e;
+    }
+}
+
+async function fetchAPI(url, retries = 3) {
+    let lastError;
+    
+    // Coba semua proxy
+    for (let attempt = 0; attempt < retries; attempt++) {
+        for (let i = 0; i < PROXIES.length; i++) {
+            const proxyIndex = (currentProxy + i) % PROXIES.length;
+            const proxy = PROXIES[proxyIndex];
+            
+            try {
+                const proxyUrl = proxy.fn(url);
+                console.log(`Trying ${proxy.name}...`, proxyUrl);
+                
+                const startTime = Date.now();
+                const data = await fetchWithTimeout(proxyUrl);
+                const elapsed = Date.now() - startTime;
+                
+                // Sukses! Ingat proxy ini untuk request berikutnya
+                currentProxy = proxyIndex;
+                proxyInfo.textContent = `✓ ${proxy.name} (${elapsed}ms)`;
+                proxyInfo.style.color = '#68d391';
+                
+                return data;
+            } catch (e) {
+                console.warn(`${proxy.name} failed:`, e.message);
+                lastError = e;
+                continue;
+            }
+        }
+    }
+    
+    throw lastError || new Error('All proxies failed');
+}
+
+// ========== STATUS DISPLAY ==========
+function setStatus(msg, type = 'loading') {
+    if (type === 'loading') {
+        status.innerHTML = `<span class="spinner"></span> ${msg}`;
+    } else {
+        status.textContent = msg;
+    }
+    status.className = 'status ' + type;
+    
+    if (type === 'success') {
+        setTimeout(() => {
+            status.textContent = '';
+            status.className = 'status';
+        }, 2000);
+    }
+}
+
+// ========== SEARCHABLE DROPDOWN ==========
+sel.onclick = e => {
+    e.preventDefault();
+    searchDrop.classList.add('show');
+    searchIn.value = '';
+    filter('');
+    searchIn.focus();
+};
+
+searchIn.oninput = () => filter(searchIn.value);
+
+document.onclick = e => {
+    if (!e.target.closest('.select-wrapper')) {
+        searchDrop.classList.remove('show');
+    }
+};
+
+function filter(t) {
+    let hasResult = false;
+    searchOpts.querySelectorAll('.search-option').forEach(o => {
+        const match = o.textContent.toLowerCase().includes(t.toLowerCase());
+        o.classList.toggle('hidden', !match);
+        if (match) hasResult = true;
+    });
+    noRes.style.display = hasResult ? 'none' : 'block';
+}
+
+function buildOpts() {
+    searchOpts.innerHTML = pairs.map(p => 
+        `<div class="search-option${p.id === currentId ? ' selected' : ''}" data-v="${p.id}">${p.description} (${p.id.toUpperCase()})</div>`
+    ).join('');
+    
+    searchOpts.onclick = e => {
+        if (e.target.classList.contains('search-option')) {
+            const v = e.target.dataset.v;
+            sel.value = v;
             searchDrop.classList.remove('show');
-            searchOpts.querySelectorAll('.search-option').forEach(o=>o.classList.toggle('selected',o.dataset.v===v));
+            searchOpts.querySelectorAll('.search-option').forEach(o => 
+                o.classList.toggle('selected', o.dataset.v === v)
+            );
             load(v);
         }
     };
 }
 
-function setStatus(m,t='loading'){status.textContent=m;status.className='status '+t;if(t==='success')setTimeout(()=>{status.textContent='';status.className='status'},2000)}
-
-async function fetchAPI(url){
-    const r=await fetch(PROXY+encodeURIComponent(url));
-    if(!r.ok)throw new Error('HTTP '+r.status);
-    return r.json();
-}
-
-async function init(){
-    setStatus('Loading...');
-    try{
-        const d=await fetchAPI('https://indodax.com/api/pairs');
-        pairs=d.sort((a,b)=>a.description.localeCompare(b.description));
-        sel.innerHTML=pairs.map(p=>`<option value="${p.id}">${p.description} (${p.id.toUpperCase()})</option>`).join('');
-        const btc=pairs.find(p=>p.id==='btcidr');
-        currentId=btc?btc.id:pairs[0].id;
-        sel.value=currentId;
-        buildOpts();
-        await load(currentId);
-    }catch(e){
-        setStatus('❌ '+e.message,'error');
-        pairs=[{id:'btcidr',description:'Bitcoin/IDR'},{id:'ethidr',description:'Ethereum/IDR'},{id:'dogeidr',description:'Dogecoin/IDR'}];
-        sel.innerHTML=pairs.map(p=>`<option value="${p.id}">${p.description}</option>`).join('');
-        currentId='btcidr';
-        buildOpts();
-        load('btcidr');
-    }
-}
-
-async function load(id){
-    currentId=id;
-    const p=pairs.find(x=>x.id===id);
-    coinName=p?p.description.split('/')[0].trim():id.replace('idr','').toUpperCase();
+// ========== INITIALIZATION ==========
+async function init() {
+    setStatus('Memuat pairs...');
+    showSkeleton(buyBody, 8);
+    showSkeleton(sellBody, 8);
     
-    setStatus('Loading...');
-    $('refreshBtn').disabled=true;
-    buyBody.innerHTML=sellBody.innerHTML='<tr><td colspan="4" style="text-align:center;color:#666">⏳</td></tr>';
-    
-    try{
-        const d=await fetchAPI(`https://indodax.com/api/depth/${id}`);
-        buyData=d.buy||[];
-        sellData=d.sell||[];
-        
-        // Price info
-        if(buyData.length&&sellData.length){
-            const hb=+buyData[0][0],ls=+sellData[0][0],sp=ls-hb;
-            $('highestBuy').textContent=fmt(hb);
-            $('lowestSell').textContent=fmt(ls);
-            $('spread').textContent=fmt(sp)+' ('+(sp/ls*100).toFixed(2)+'%)';
-            $('priceInfo').style.display='flex';
+    try {
+        // Coba load dari cache dulu
+        const cached = localStorage.getItem('indodax_pairs');
+        if (cached) {
+            try {
+                const { data, timestamp } = JSON.parse(cached);
+                // Cache valid 1 jam
+                if (Date.now() - timestamp < 3600000) {
+                    pairs = data;
+                    console.log('Using cached pairs');
+                }
+            } catch (e) {}
         }
         
-        render('buy',LIMIT);
-        render('sell',LIMIT);
+        // Jika tidak ada cache, fetch dari API
+        if (!pairs.length) {
+            const data = await fetchAPI('https://indodax.com/api/pairs');
+            pairs = data.sort((a, b) => a.description.localeCompare(b.description));
+            
+            // Simpan ke cache
+            localStorage.setItem('indodax_pairs', JSON.stringify({
+                data: pairs,
+                timestamp: Date.now()
+            }));
+        }
         
-        $('lastUpdate').textContent='🕐 '+new Date().toLocaleTimeString('id-ID')+' | '+(buyData.length+sellData.length)+' orders';
-        setStatus('✓','success');
-    }catch(e){
-        setStatus('❌ Error','error');
-        buyBody.innerHTML=sellBody.innerHTML='<tr><td colspan="4" style="text-align:center;color:#fc8181">❌ Gagal</td></tr>';
+        sel.innerHTML = pairs.map(p => 
+            `<option value="${p.id}">${p.description} (${p.id.toUpperCase()})</option>`
+        ).join('');
+        
+        // Default ke BTC
+        const btc = pairs.find(p => p.id === 'btcidr');
+        currentId = btc ? btc.id : pairs[0].id;
+        sel.value = currentId;
+        buildOpts();
+        
+        await load(currentId);
+        
+    } catch (e) {
+        console.error('Init error:', e);
+        setStatus('❌ ' + e.message, 'error');
+        
+        // Fallback pairs
+        pairs = [
+            { id: 'btcidr', description: 'Bitcoin/IDR' },
+            { id: 'ethidr', description: 'Ethereum/IDR' },
+            { id: 'dogeidr', description: 'Dogecoin/IDR' },
+            { id: 'shibbidr', description: 'Shiba Inu/IDR' },
+            { id: 'xrpidr', description: 'Ripple/IDR' }
+        ];
+        sel.innerHTML = pairs.map(p => `<option value="${p.id}">${p.description}</option>`).join('');
+        currentId = 'btcidr';
+        buildOpts();
+        
+        // Retry load setelah 2 detik
+        setTimeout(() => load('btcidr'), 2000);
     }
-    $('refreshBtn').disabled=false;
 }
 
-function render(type,limit){
-    const data=type==='buy'?buyData:sellData;
-    const body=type==='buy'?buyBody:sellBody;
-    const show=limit?data.slice(0,limit):data;
+// ========== LOAD ORDER BOOK ==========
+async function load(id) {
+    currentId = id;
+    const p = pairs.find(x => x.id === id);
+    coinName = p ? p.description.split('/')[0].trim() : id.replace('idr', '').toUpperCase();
     
-    let vol=0,val=0,html='';
-    data.forEach((r,i)=>{
-        const h=+r[0],j=+r[1],t=h*j;
-        vol+=j;val+=t;
-        if(i<show.length)html+=`<tr><td class="rn">${i+1}</td><td>${fmt(h)}</td><td>${fmtV(j)}</td><td>${fmtC(t)}</td></tr>`;
+    setStatus('Memuat order book...');
+    $('refreshBtn').disabled = true;
+    showSkeleton(buyBody, 8);
+    showSkeleton(sellBody, 8);
+    
+    try {
+        const data = await fetchAPI(`https://indodax.com/api/depth/${id}`);
+        
+        buyData = data.buy || [];
+        sellData = data.sell || [];
+        
+        // Price info
+        if (buyData.length && sellData.length) {
+            const highBid = +buyData[0][0];
+            const lowAsk = +sellData[0][0];
+            const spread = lowAsk - highBid;
+            
+            $('highestBuy').textContent = fmt(highBid);
+            $('lowestSell').textContent = fmt(lowAsk);
+            $('spread').textContent = fmt(spread) + ' (' + (spread / lowAsk * 100).toFixed(2) + '%)';
+            $('priceInfo').style.display = 'flex';
+        }
+        
+        render('buy', LIMIT);
+        render('sell', LIMIT);
+        
+        $('lastUpdate').textContent = '🕐 ' + new Date().toLocaleTimeString('id-ID') + 
+            ' | Total: ' + (buyData.length + sellData.length) + ' orders';
+        
+        setStatus('✓ Berhasil', 'success');
+        
+    } catch (e) {
+        console.error('Load error:', e);
+        setStatus('❌ ' + (e.message || 'Gagal memuat'), 'error');
+        
+        buyBody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#fc8181;padding:20px">
+            ❌ Gagal memuat data<br>
+            <button class="btn btn-sm" style="margin-top:10px" onclick="load('${id}')">🔄 Coba Lagi</button>
+        </td></tr>`;
+        sellBody.innerHTML = buyBody.innerHTML;
+    }
+    
+    $('refreshBtn').disabled = false;
+}
+
+// ========== RENDER TABLE ==========
+function render(type, limit) {
+    const data = type === 'buy' ? buyData : sellData;
+    const body = type === 'buy' ? buyBody : sellBody;
+    const show = limit ? data.slice(0, limit) : data;
+    
+    let vol = 0, val = 0, html = '';
+    
+    data.forEach((row, i) => {
+        const price = +row[0];
+        const volume = +row[1];
+        const total = price * volume;
+        
+        vol += volume;
+        val += total;
+        
+        if (i < show.length) {
+            html += `<tr>
+                <td class="rn">${i + 1}</td>
+                <td>${fmt(price)}</td>
+                <td>${fmtV(volume)}</td>
+                <td>${fmtC(total)}</td>
+            </tr>`;
+        }
     });
     
-    body.innerHTML=html||'<tr><td colspan="4" style="text-align:center">-</td></tr>';
-    $(type+'Count').textContent=data.length;
-    $(type+'Orders').textContent=data.length;
-    $(type+'Vol').textContent=fmtV(vol)+' '+coinName;
-    $(type+'Val').textContent=fmtCF(val);
-    $(type+'More').style.display=(limit&&data.length>limit)?'block':'none';
+    body.innerHTML = html || '<tr><td colspan="4" style="text-align:center;color:#666">Tidak ada data</td></tr>';
+    
+    $(type + 'Count').textContent = data.length;
+    $(type + 'Orders').textContent = data.length;
+    $(type + 'Vol').textContent = fmtV(vol) + ' ' + coinName;
+    $(type + 'Val').textContent = fmtCF(val);
+    $(type + 'More').style.display = (limit && data.length > limit) ? 'block' : 'none';
 }
 
-function showAll(type){render(type,0);$(type+'More').style.display='none'}
-function refresh(){if(currentId)load(currentId)}
+function showAll(type) {
+    render(type, 0);
+    $(type + 'More').style.display = 'none';
+}
 
-function fmt(n){return(+n).toLocaleString('id-ID')}
-function fmtV(n){n=+n;if(!n)return'0';if(n<.0001)return n.toFixed(8);if(n<1)return n.toFixed(4);if(n<1e6)return n.toLocaleString('id-ID',{maximumFractionDigits:2});return(n/1e6).toFixed(2)+'M'}
-function fmtC(n){if(n>=1e9)return'Rp'+(n/1e9).toFixed(1)+'M';if(n>=1e6)return'Rp'+(n/1e6).toFixed(1)+'Jt';if(n>=1e3)return'Rp'+(n/1e3).toFixed(0)+'Rb';return'Rp'+Math.round(n)}
-function fmtCF(n){if(n>=1e12)return'Rp'+(n/1e12).toFixed(2)+' T';if(n>=1e9)return'Rp'+(n/1e9).toFixed(2)+' M';if(n>=1e6)return'Rp'+(n/1e6).toFixed(2)+' Jt';return'Rp'+Math.round(n).toLocaleString('id-ID')}
+function refresh() {
+    if (currentId) load(currentId);
+}
 
-sel.onchange=function(){load(this.value)};
+// ========== FORMATTERS ==========
+function fmt(n) {
+    return (+n).toLocaleString('id-ID');
+}
+
+function fmtV(n) {
+    n = +n;
+    if (!n) return '0';
+    if (n < 0.0001) return n.toFixed(8);
+    if (n < 1) return n.toFixed(4);
+    if (n < 1e6) return n.toLocaleString('id-ID', { maximumFractionDigits: 2 });
+    return (n / 1e6).toFixed(2) + 'M';
+}
+
+function fmtC(n) {
+    if (n >= 1e9) return 'Rp' + (n / 1e9).toFixed(1) + 'M';
+    if (n >= 1e6) return 'Rp' + (n / 1e6).toFixed(1) + 'Jt';
+    if (n >= 1e3) return 'Rp' + (n / 1e3).toFixed(0) + 'Rb';
+    return 'Rp' + Math.round(n);
+}
+
+function fmtCF(n) {
+    if (n >= 1e12) return 'Rp' + (n / 1e12).toFixed(2) + ' T';
+    if (n >= 1e9) return 'Rp' + (n / 1e9).toFixed(2) + ' M';
+    if (n >= 1e6) return 'Rp' + (n / 1e6).toFixed(2) + ' Jt';
+    return 'Rp' + Math.round(n).toLocaleString('id-ID');
+}
+
+// ========== EVENT LISTENERS ==========
+sel.onchange = function() { load(this.value); };
+
+// ========== START ==========
 init();
 </script>
 </body>
