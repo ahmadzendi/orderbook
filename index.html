@@ -31,6 +31,7 @@
         
         .controls{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px;padding:10px;background:var(--card);border-radius:10px;margin:10px 0}
         
+        /* Custom Searchable Dropdown */
         .dropdown-wrap{position:relative;min-width:280px}
         .dropdown-selected{width:100%;padding:10px 35px 10px 12px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .2s}
         .dropdown-selected:hover{border-color:var(--accent)}
@@ -186,40 +187,40 @@
     <div class="tables">
         <div class="table-card buy">
             <div class="table-header">
-                <span class="table-title">📈 ORDER BELI</span>
+                <span class="table-title">📈 BUY ORDERS</span>
                 <span class="count-badge" id="buyCount">0</span>
             </div>
             <div class="table-scroll gpu" id="buyScroll">
                 <table>
-                    <thead><tr><th>#</th><th>Harga (Rp)</th><th>Jumlah</th><th>Total (Rp)</th></tr></thead>
+                    <thead><tr><th>#</th><th>Price (IDR)</th><th>Amount</th><th>Total</th></tr></thead>
                     <tbody id="buyBody"></tbody>
                 </table>
             </div>
             <div class="summary">
                 <div class="summary-grid">
-                    <div class="summary-item"><div class="summary-label">Jumlah Order</div><div class="summary-value" id="buyOrders">-</div></div>
+                    <div class="summary-item"><div class="summary-label">Orders</div><div class="summary-value" id="buyOrders">-</div></div>
                     <div class="summary-item"><div class="summary-label">Volume</div><div class="summary-value" id="buyVol">-</div></div>
-                    <div class="summary-item"><div class="summary-label">Total Nilai</div><div class="summary-value" id="buyVal">-</div></div>
+                    <div class="summary-item"><div class="summary-label">Value</div><div class="summary-value" id="buyVal">-</div></div>
                 </div>
             </div>
         </div>
         
         <div class="table-card sell">
             <div class="table-header">
-                <span class="table-title">📉 ORDER JUAL</span>
+                <span class="table-title">📉 SELL ORDERS</span>
                 <span class="count-badge" id="sellCount">0</span>
             </div>
             <div class="table-scroll gpu" id="sellScroll">
                 <table>
-                    <thead><tr><th>#</th><th>Harga (Rp)</th><th>Jumlah</th><th>Total (Rp)</th></tr></thead>
+                    <thead><tr><th>#</th><th>Price (IDR)</th><th>Amount</th><th>Total</th></tr></thead>
                     <tbody id="sellBody"></tbody>
                 </table>
             </div>
             <div class="summary">
                 <div class="summary-grid">
-                    <div class="summary-item"><div class="summary-label">Jumlah Order</div><div class="summary-value" id="sellOrders">-</div></div>
+                    <div class="summary-item"><div class="summary-label">Orders</div><div class="summary-value" id="sellOrders">-</div></div>
                     <div class="summary-item"><div class="summary-label">Volume</div><div class="summary-value" id="sellVol">-</div></div>
-                    <div class="summary-item"><div class="summary-label">Total Nilai</div><div class="summary-value" id="sellVal">-</div></div>
+                    <div class="summary-item"><div class="summary-label">Value</div><div class="summary-value" id="sellVal">-</div></div>
                 </div>
             </div>
         </div>
@@ -235,6 +236,10 @@
     </div>
 
 <script>
+// ============================================
+// 🚀 HYPER SPEED ENGINE v3.1 - BUG FIXED
+// ============================================
+
 const CONFIG = {
     PROXIES: [
         url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
@@ -246,8 +251,12 @@ const CONFIG = {
     CACHE_TTL: 3600000
 };
 
+// ============================================
+// 💾 SIMPLE CACHE
+// ============================================
 const Cache = {
     data: new Map(),
+    
     get(key) {
         const item = this.data.get(key);
         if (!item) return null;
@@ -257,11 +266,19 @@ const Cache = {
         }
         return item.value;
     },
+    
     set(key, value, ttl = CONFIG.CACHE_TTL) {
         this.data.set(key, { value, exp: Date.now() + ttl });
+    },
+    
+    clear() {
+        this.data.clear();
     }
 };
 
+// ============================================
+// ⚡ HYPER FETCH
+// ============================================
 const Fetcher = {
     proxyIndex: 0,
     stats: CONFIG.PROXIES.map(() => ({ time: 1000, fails: 0 })),
@@ -279,6 +296,8 @@ const Fetcher = {
         for (const { fn, i } of sorted) {
             try {
                 const proxyUrl = fn(url);
+                console.log(`[Fetch] Trying proxy ${i}:`, proxyUrl);
+                
                 const start = performance.now();
                 const res = await fetch(proxyUrl, { 
                     signal: controller.signal,
@@ -294,10 +313,13 @@ const Fetcher = {
                 
                 this.stats[i].time = this.stats[i].time * 0.7 + elapsed * 0.3;
                 this.stats[i].fails = Math.max(0, this.stats[i].fails - 1);
+                this.proxyIndex = i;
                 
+                console.log(`[Fetch] Success via proxy ${i} in ${elapsed.toFixed(0)}ms`);
                 return { data, elapsed, proxy: i };
                 
             } catch (e) {
+                console.warn(`[Fetch] Proxy ${i} failed:`, e.message);
                 this.stats[i].fails++;
                 lastError = e;
             }
@@ -308,41 +330,44 @@ const Fetcher = {
     }
 };
 
+// ============================================
+// 🎨 RENDERER
+// ============================================
 const Renderer = {
-    // Format harga dengan Rp
     formatPrice(n) {
-        if (n >= 1000) return 'Rp ' + n.toLocaleString('id-ID');
-        if (n >= 1) return 'Rp ' + n.toFixed(2);
-        if (n >= 0.0001) return 'Rp ' + n.toFixed(4);
-        return 'Rp ' + n.toFixed(8);
-    },
-    
-    formatAmount(n) {
-        if (n >= 1e9) return (n / 1e9).toFixed(2) + ' M';
-        if (n >= 1e6) return (n / 1e6).toFixed(2) + ' Jt';
-        if (n >= 1e3) return (n / 1e3).toFixed(2) + ' Rb';
-        if (n >= 1) return n.toFixed(4);
+        if (n >= 1000) return n.toLocaleString('id-ID');
+        if (n >= 1) return n.toFixed(2);
+        if (n >= 0.0001) return n.toFixed(4);
         return n.toFixed(8);
     },
     
-    // Format total dengan Rp
-    formatTotal(n) {
-        if (n >= 1e12) return 'Rp ' + (n / 1e12).toFixed(1) + ' T';
-        if (n >= 1e9) return 'Rp ' + (n / 1e9).toFixed(1) + ' M';
-        if (n >= 1e6) return 'Rp ' + (n / 1e6).toFixed(1) + ' Jt';
-        if (n >= 1e3) return 'Rp ' + (n / 1e3).toFixed(0) + ' Rb';
-        return 'Rp ' + n.toFixed(0);
+    formatAmount(n) {
+        if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+        if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+        if (n >= 1e3) return (n / 1e3).toFixed(2) + 'K';
+        if (n >= 1) return n.toFixed(4);
+        if (n >= 0.0001) return n.toFixed(4);
+        return n.toFixed(8);
     },
     
-    // Format nilai summary dengan Rp
+    formatTotal(n) {
+        if (n >= 1e12) return (n / 1e12).toFixed(1) + 'T';
+        if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B';
+        if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+        if (n >= 1e3) return (n / 1e3).toFixed(0) + 'K';
+        return n.toFixed(0);
+    },
+    
     formatValue(n) {
-        if (n >= 1e12) return 'Rp ' + (n / 1e12).toFixed(2) + ' Triliun';
-        if (n >= 1e9) return 'Rp ' + (n / 1e9).toFixed(2) + ' Miliar';
-        if (n >= 1e6) return 'Rp ' + (n / 1e6).toFixed(2) + ' Juta';
-        return 'Rp ' + Math.round(n).toLocaleString('id-ID');
+        if (n >= 1e12) return 'Rp' + (n / 1e12).toFixed(2) + 'T';
+        if (n >= 1e9) return 'Rp' + (n / 1e9).toFixed(2) + 'M';
+        if (n >= 1e6) return 'Rp' + (n / 1e6).toFixed(2) + 'Jt';
+        return 'Rp' + Math.round(n).toLocaleString('id-ID');
     },
     
     renderTable(type, data, coinName) {
+        console.log(`[Render] ${type} - ${data.length} orders for ${coinName}`);
+        
         const tbody = document.getElementById(type + 'Body');
         const display = data.slice(0, CONFIG.MAX_ROWS);
         
@@ -375,10 +400,12 @@ const Renderer = {
         
         tbody.innerHTML = html;
         
-        document.getElementById(type + 'Count').textContent = data.length.toLocaleString('id-ID');
-        document.getElementById(type + 'Orders').textContent = data.length.toLocaleString('id-ID');
+        document.getElementById(type + 'Count').textContent = data.length;
+        document.getElementById(type + 'Orders').textContent = data.length.toLocaleString();
         document.getElementById(type + 'Vol').textContent = this.formatAmount(totalVol) + ' ' + coinName;
         document.getElementById(type + 'Val').textContent = this.formatValue(totalVal);
+        
+        console.log(`[Render] ${type} done - Vol: ${totalVol}, Val: ${totalVal}`);
     },
     
     showSkeleton(type) {
@@ -392,37 +419,52 @@ const Renderer = {
         const tbody = document.getElementById(type + 'Body');
         tbody.innerHTML = `<tr><td colspan="4" class="error-box">
             ❌ ${message}<br>
-            <button class="btn btn-primary" onclick="App.refresh()">🔄 Coba Lagi</button>
+            <button class="btn btn-primary" onclick="App.refresh()">🔄 Retry</button>
         </td></tr>`;
     }
 };
 
+// ============================================
+// 🔍 SEARCHABLE DROPDOWN
+// ============================================
 const Dropdown = {
     isOpen: false,
+    filteredPairs: [],
     
     init() {
+        this.wrap = document.getElementById('dropdownWrap');
         this.selected = document.getElementById('dropdownSelected');
         this.menu = document.getElementById('dropdownMenu');
         this.search = document.getElementById('dropdownSearch');
         this.list = document.getElementById('dropdownList');
         this.selectedText = document.getElementById('selectedText');
         
+        // Toggle dropdown
         this.selected.addEventListener('click', (e) => {
             e.stopPropagation();
             this.toggle();
         });
         
+        // Search input
         this.search.addEventListener('input', (e) => {
             this.filter(e.target.value);
         });
         
-        this.menu.addEventListener('click', (e) => e.stopPropagation());
+        // Prevent close when clicking inside menu
+        this.menu.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
         
-        document.addEventListener('click', () => this.close());
+        // Close on outside click
+        document.addEventListener('click', () => {
+            this.close();
+        });
         
+        // Keyboard navigation
         this.search.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') this.close();
-            else if (e.key === 'Enter') {
+            if (e.key === 'Escape') {
+                this.close();
+            } else if (e.key === 'Enter') {
                 const first = this.list.querySelector('.dropdown-item');
                 if (first) first.click();
             }
@@ -430,7 +472,11 @@ const Dropdown = {
     },
     
     toggle() {
-        this.isOpen ? this.close() : this.open();
+        if (this.isOpen) {
+            this.close();
+        } else {
+            this.open();
+        }
     },
     
     open() {
@@ -449,21 +495,23 @@ const Dropdown = {
     },
     
     populate(pairs) {
+        this.filteredPairs = pairs;
         this.renderList(pairs, '');
     },
     
     filter(query) {
         const q = query.toLowerCase().trim();
-        let filtered = App.pairs;
         
-        if (q) {
-            filtered = App.pairs.filter(p => 
+        if (!q) {
+            this.filteredPairs = App.pairs;
+        } else {
+            this.filteredPairs = App.pairs.filter(p => 
                 p.description.toLowerCase().includes(q) ||
                 p.id.toLowerCase().includes(q)
             );
         }
         
-        this.renderList(filtered, q);
+        this.renderList(this.filteredPairs, q);
     },
     
     renderList(pairs, query) {
@@ -476,8 +524,9 @@ const Dropdown = {
             let name = p.description;
             let id = p.id.toUpperCase();
             
+            // Highlight matching text
             if (query) {
-                const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+                const regex = new RegExp(`(${this.escapeRegex(query)})`, 'gi');
                 name = name.replace(regex, '<span class="dropdown-highlight">$1</span>');
                 id = id.replace(regex, '<span class="dropdown-highlight">$1</span>');
             }
@@ -490,9 +539,12 @@ const Dropdown = {
             </div>`;
         }).join('');
         
+        // Add click handlers
         this.list.querySelectorAll('.dropdown-item').forEach(item => {
             item.addEventListener('click', () => {
-                this.select(item.dataset.id, item.dataset.name);
+                const id = item.dataset.id;
+                const name = item.dataset.name;
+                this.select(id, name);
             });
         });
     },
@@ -501,7 +553,14 @@ const Dropdown = {
         this.selectedText.textContent = `${name} (${id.toUpperCase()})`;
         this.close();
         
+        // Update selected state
+        this.list.querySelectorAll('.dropdown-item').forEach(item => {
+            item.classList.toggle('selected', item.dataset.id === id);
+        });
+        
+        // Trigger load
         if (id !== App.currentPair) {
+            console.log('[Dropdown] Selected:', id);
             App.loadOrderBook(id);
         }
     },
@@ -511,9 +570,16 @@ const Dropdown = {
         if (pair) {
             this.selectedText.textContent = `${pair.description} (${id.toUpperCase()})`;
         }
+    },
+    
+    escapeRegex(str) {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 };
 
+// ============================================
+// 🎮 MAIN APP
+// ============================================
 const App = {
     pairs: [],
     currentPair: '',
@@ -521,9 +587,12 @@ const App = {
     isLoading: false,
     requestCount: 0,
     startTime: Date.now(),
+    
     el: {},
     
     async init() {
+        console.log('[App] Initializing...');
+        
         this.el = {
             refreshBtn: document.getElementById('refreshBtn'),
             status: document.getElementById('status'),
@@ -542,11 +611,12 @@ const App = {
             currentPairDisplay: document.getElementById('currentPairDisplay')
         };
         
+        // Init dropdown
         Dropdown.init();
         
         Renderer.showSkeleton('buy');
         Renderer.showSkeleton('sell');
-        this.setStatus('Loading...', 'loading');
+        this.setStatus('Initializing...', 'loading');
         
         setInterval(() => {
             const elapsed = (Date.now() - this.startTime) / 1000;
@@ -560,40 +630,59 @@ const App = {
             this.el.wsStatus.className = 'dot';
             this.el.wsText.textContent = 'Connected';
         } catch (e) {
+            console.error('[App] Init error:', e);
             this.setStatus('❌ ' + e.message, 'error');
             this.el.wsStatus.className = 'dot error';
             this.el.wsText.textContent = 'Error';
         }
         
-        this.el.refreshBtn.addEventListener('click', () => this.refresh());
+        this.el.refreshBtn.addEventListener('click', () => {
+            console.log('[App] Manual refresh');
+            this.refresh();
+        });
     },
     
     async loadPairs() {
         let pairs = Cache.get('pairs');
         
         if (!pairs) {
+            console.log('[App] Fetching pairs from API...');
             this.setStatus('Loading pairs...', 'loading');
+            
             const result = await Fetcher.fetch('https://indodax.com/api/pairs');
             pairs = result.data.sort((a, b) => a.description.localeCompare(b.description));
             Cache.set('pairs', pairs);
+        } else {
+            console.log('[App] Using cached pairs');
         }
         
         this.pairs = pairs;
+        
+        // Populate dropdown
         Dropdown.populate(pairs);
         
         const btc = pairs.find(p => p.id === 'btcidr');
         this.currentPair = btc ? btc.id : pairs[0]?.id || 'btcidr';
+        
+        // Set initial selected
         Dropdown.setSelected(this.currentPair);
+        
+        console.log('[App] Loaded', pairs.length, 'pairs, default:', this.currentPair);
     },
     
     async loadOrderBook(pairId) {
-        if (this.isLoading) return;
+        if (this.isLoading) {
+            console.log('[App] Already loading, skipping...');
+            return;
+        }
         
         this.isLoading = true;
         this.currentPair = pairId;
         
         const pair = this.pairs.find(p => p.id === pairId);
         this.coinName = pair ? pair.description.split('/')[0].trim() : pairId.replace('idr', '').toUpperCase();
+        
+        console.log('[App] Loading order book for:', pairId, '- Coin:', this.coinName);
         
         this.el.currentPairDisplay.textContent = `(${pairId.toUpperCase()})`;
         this.el.refreshBtn.disabled = true;
@@ -612,8 +701,12 @@ const App = {
             
             this.requestCount++;
             
+            console.log('[App] Data received:', result.data);
+            
             const buyData = result.data.buy || [];
             const sellData = result.data.sell || [];
+            
+            console.log('[App] Buy orders:', buyData.length, 'Sell orders:', sellData.length);
             
             this.el.latency.textContent = Math.round(result.elapsed);
             this.el.fetchTime.textContent = `⏱️ Fetch: ${Math.round(fetchTime)}ms`;
@@ -625,9 +718,9 @@ const App = {
                 const spread = bestAsk - bestBid;
                 const spreadPct = ((spread / bestAsk) * 100).toFixed(3);
                 
-                this.el.bestBid.textContent = 'Rp ' + bestBid.toLocaleString('id-ID');
-                this.el.bestAsk.textContent = 'Rp ' + bestAsk.toLocaleString('id-ID');
-                this.el.spread.textContent = `Rp ${spread.toLocaleString('id-ID')} (${spreadPct}%)`;
+                this.el.bestBid.textContent = bestBid.toLocaleString('id-ID');
+                this.el.bestAsk.textContent = bestAsk.toLocaleString('id-ID');
+                this.el.spread.textContent = `${spread.toLocaleString('id-ID')} (${spreadPct}%)`;
                 this.el.priceBar.style.display = 'grid';
             }
             
@@ -651,7 +744,11 @@ const App = {
             this.setStatus('✓ Ready', 'success');
             this.el.wsStatus.className = 'dot';
             
+            console.log('[App] Load complete in', Math.round(totalTime), 'ms');
+            
         } catch (e) {
+            console.error('[App] Load error:', e);
+            
             this.setStatus('❌ ' + e.message, 'error');
             this.el.wsStatus.className = 'dot error';
             
@@ -694,7 +791,14 @@ const App = {
     }
 };
 
-document.addEventListener('DOMContentLoaded', () => App.init());
+// ============================================
+// 🚀 START
+// ============================================
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('[Boot] Starting Hyper Order Book v3.1');
+    App.init();
+});
+
 window.App = App;
 </script>
 </body>
