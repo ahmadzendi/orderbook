@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Order Book Indodax</title>
+    <title>Order Book Indodax - ULTRA REALTIME</title>
     
     <link rel="dns-prefetch" href="//indodax.com">
     <link rel="dns-prefetch" href="//corsproxy.io">
@@ -16,7 +16,13 @@
         body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:8px;font-size:13px}
         
         .header{text-align:center;padding:12px 0;position:sticky;top:0;z-index:100;background:var(--bg);border-bottom:1px solid var(--border)}
-        .logo{font-size:20px;font-weight:800;background:linear-gradient(135deg,var(--sell),var(--accent),var(--buy));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .logo{font-size:20px;font-weight:800;background:linear-gradient(135deg,var(--sell),var(--accent),var(--buy));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        
+        .speed-bar{display:flex;justify-content:center;gap:15px;margin-top:8px;font-size:10px;padding:6px 12px;background:rgba(0,212,255,.1);border-radius:20px;display:inline-flex}
+        .speed-bar span{display:flex;align-items:center;gap:4px}
+        .pulse{width:8px;height:8px;border-radius:50%;background:var(--buy);animation:pulse .5s infinite}
+        @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+        .speed-val{font-weight:700;color:var(--accent);font-family:'SF Mono',monospace}
         
         .controls{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px;padding:10px;background:var(--card);border-radius:10px;margin:10px 0}
         
@@ -41,29 +47,43 @@
         .dropdown-empty{padding:20px;text-align:center;color:var(--muted);font-size:12px}
         .dropdown-highlight{background:var(--accent);color:#000;padding:0 2px;border-radius:2px}
         
-        .price-bar{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;padding:12px 15px;background:linear-gradient(135deg,rgba(0,255,136,.05),rgba(255,68,102,.05));border-radius:10px;margin-bottom:10px;align-items:center}
+        .price-bar{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;padding:12px 15px;background:linear-gradient(135deg,rgba(0,255,136,.05),rgba(255,68,102,.05));border-radius:10px;margin-bottom:10px;align-items:center}
         .price-item{text-align:center}
-        .price-item:first-child{text-align:left}
-        .price-item:last-child{text-align:right}
         .price-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
-        .price-value{font-size:18px;font-weight:700;font-family:'SF Mono',Consolas,monospace;margin-top:2px}
+        .price-value{font-size:18px;font-weight:700;font-family:'SF Mono',Consolas,monospace;margin-top:2px;transition:color .15s,text-shadow .15s}
         .price-value.buy{color:var(--buy)}
         .price-value.sell{color:var(--sell)}
         .price-value.spread{color:var(--warning);font-size:14px}
+        .price-value.last{color:var(--accent);font-size:20px}
+        .price-value.flash-up{color:var(--buy)!important;text-shadow:0 0 20px var(--buy)}
+        .price-value.flash-down{color:var(--sell)!important;text-shadow:0 0 20px var(--sell)}
+        .price-change{font-size:10px;margin-top:2px}
+        .price-change.up{color:var(--buy)}
+        .price-change.down{color:var(--sell)}
         
-        .tables{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:10px}
-        .table-card{background:var(--card);border-radius:10px;border:1px solid var(--border);overflow:hidden;position:relative}
+        .market-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:10px 15px;background:var(--card);border-radius:10px;margin-bottom:10px}
+        .stat-item{text-align:center}
+        .stat-label{font-size:9px;color:var(--muted);text-transform:uppercase}
+        .stat-value{font-size:12px;font-weight:600;font-family:'SF Mono',Consolas,monospace;margin-top:2px}
+        .stat-value.high{color:var(--buy)}
+        .stat-value.low{color:var(--sell)}
+        
+        .tables{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:10px;contain:layout style}
+        .table-card{background:var(--card);border-radius:10px;border:1px solid var(--border);overflow:hidden;position:relative;contain:content}
         .table-header{display:flex;justify-content:space-between;align-items:center;padding:12px 15px;border-bottom:2px solid}
         .table-card.buy .table-header{border-color:var(--buy)}
         .table-card.sell .table-header{border-color:var(--sell)}
+        .table-card.trade .table-header{border-color:var(--accent)}
         .table-title{font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px}
         .table-card.buy .table-title{color:var(--buy)}
         .table-card.sell .table-title{color:var(--sell)}
+        .table-card.trade .table-title{color:var(--accent)}
         .count-badge{font-size:11px;padding:3px 10px;border-radius:12px;font-weight:600}
         .table-card.buy .count-badge{background:rgba(0,255,136,.1);color:var(--buy)}
         .table-card.sell .count-badge{background:rgba(255,68,102,.1);color:var(--sell)}
+        .table-card.trade .count-badge{background:rgba(0,212,255,.1);color:var(--accent)}
         
-        .table-scroll{height:350px;overflow-y:auto;overflow-x:hidden}
+        .table-scroll{height:350px;overflow-y:auto;overflow-x:hidden;will-change:scroll-position}
         .table-scroll::-webkit-scrollbar{width:4px}
         .table-scroll::-webkit-scrollbar-thumb{background:var(--border)}
         
@@ -74,10 +94,13 @@
         td:first-child{text-align:center;color:var(--muted);font-size:10px}
         .table-card.buy td:nth-child(2){color:var(--buy);font-weight:600}
         .table-card.sell td:nth-child(2){color:var(--sell);font-weight:600}
+        tr{transition:background .1s}
         tr:hover{background:rgba(255,255,255,.03)}
+        tr.new-row{animation:highlight .5s}
+        @keyframes highlight{from{background:rgba(0,212,255,.3)}}
         
         .depth-cell{position:relative}
-        .depth-bar{position:absolute;top:0;bottom:0;right:0;opacity:.15;pointer-events:none}
+        .depth-bar{position:absolute;top:0;bottom:0;right:0;opacity:.15;pointer-events:none;transition:width .15s}
         .table-card.buy .depth-bar{background:var(--buy)}
         .table-card.sell .depth-bar{background:var(--sell)}
         
@@ -88,6 +111,16 @@
         .summary-value{font-weight:700;margin-top:2px;font-family:'SF Mono',Consolas,monospace}
         .table-card.buy .summary-value{color:var(--buy)}
         .table-card.sell .summary-value{color:var(--sell)}
+        .table-card.trade .summary-value{color:var(--accent)}
+        
+        .trade-section{margin-top:10px}
+        .table-card.trade .table-scroll{height:400px}
+        .trade-type{padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;text-transform:uppercase}
+        .trade-type.buy{background:rgba(0,255,136,.15);color:var(--buy)}
+        .trade-type.sell{background:rgba(255,68,102,.15);color:var(--sell)}
+        .trade-time{color:var(--muted);font-size:11px}
+        .trade-price.buy{color:var(--buy);font-weight:600}
+        .trade-price.sell{color:var(--sell);font-weight:600}
         
         .footer{text-align:center;padding:15px;color:var(--muted);font-size:10px}
         .footer a{color:var(--accent);text-decoration:none}
@@ -100,21 +133,28 @@
         @media(max-width:768px){
             .tables{grid-template-columns:1fr}
             .price-bar{grid-template-columns:1fr 1fr;gap:8px}
-            .price-item:first-child,.price-item:last-child{text-align:center}
-            .price-item.spread-item{grid-column:span 2}
+            .price-item.last-item{grid-column:span 2}
+            .market-stats{grid-template-columns:repeat(2,1fr)}
             .dropdown-wrap{min-width:100%;max-width:100%}
             .controls{flex-direction:column}
+            .speed-bar{flex-wrap:wrap;justify-content:center}
         }
     </style>
 </head>
 <body>
     <div class="init-loading" id="initLoading">
-        <div class="logo">⚡ ORDER BOOK</div>
-        <div class="init-status" id="initStatus">Connecting...</div>
+        <div class="logo">⚡ ULTRA REALTIME</div>
+        <div class="init-status" id="initStatus">Initializing HyperSpeed Engine...</div>
     </div>
 
     <div class="header">
         <div class="logo">⚡ ORDER BOOK INDODAX</div>
+        <div class="speed-bar">
+            <span><span class="pulse"></span> LIVE</span>
+            <span>⚡ <span class="speed-val" id="latency">--</span>ms</span>
+            <span>🔄 <span class="speed-val" id="ups">0</span>/s</span>
+            <span>📊 <span class="speed-val" id="totalUpdates">0</span></span>
+        </div>
     </div>
     
     <div class="controls">
@@ -134,13 +174,37 @@
             <div class="price-label">Best Bid</div>
             <div class="price-value buy" id="bestBid">-</div>
         </div>
-        <div class="price-item spread-item">
+        <div class="price-item last-item">
+            <div class="price-label">💰 Harga Sekarang</div>
+            <div class="price-value last" id="lastPrice">-</div>
+            <div class="price-change" id="priceChange">-</div>
+        </div>
+        <div class="price-item">
             <div class="price-label">Spread</div>
             <div class="price-value spread" id="spread">-</div>
         </div>
         <div class="price-item">
             <div class="price-label">Best Ask</div>
             <div class="price-value sell" id="bestAsk">-</div>
+        </div>
+    </div>
+    
+    <div class="market-stats">
+        <div class="stat-item">
+            <div class="stat-label">📈 High 24h</div>
+            <div class="stat-value high" id="high24">-</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-label">📉 Low 24h</div>
+            <div class="stat-value low" id="low24">-</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-label">📊 Vol 24h</div>
+            <div class="stat-value" id="vol24">-</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-label">💵 Vol IDR</div>
+            <div class="stat-value" id="volIdr24">-</div>
         </div>
     </div>
     
@@ -151,13 +215,13 @@
                 <span class="count-badge" id="buyCount">-</span>
             </div>
             <div class="table-scroll">
-                <table><thead><tr><th>#</th><th>Harga</th><th>Jumlah</th><th>Total Rupiah</th></tr></thead><tbody id="buyBody"></tbody></table>
+                <table><thead><tr><th>#</th><th>Harga</th><th>Jumlah</th><th>Total</th></tr></thead><tbody id="buyBody"></tbody></table>
             </div>
             <div class="summary">
                 <div class="summary-grid">
                     <div class="summary-item"><div class="summary-label">Orders</div><div class="summary-value" id="buyOrders">-</div></div>
                     <div class="summary-item"><div class="summary-label">Volume</div><div class="summary-value" id="buyVol">-</div></div>
-                    <div class="summary-item"><div class="summary-label">Total Rupiah</div><div class="summary-value" id="buyVal">-</div></div>
+                    <div class="summary-item"><div class="summary-label">Total</div><div class="summary-value" id="buyVal">-</div></div>
                 </div>
             </div>
         </div>
@@ -168,13 +232,52 @@
                 <span class="count-badge" id="sellCount">-</span>
             </div>
             <div class="table-scroll">
-                <table><thead><tr><th>#</th><th>Harga</th><th>Jumlah</th><th>Total Rupiah</th></tr></thead><tbody id="sellBody"></tbody></table>
+                <table><thead><tr><th>#</th><th>Harga</th><th>Jumlah</th><th>Total</th></tr></thead><tbody id="sellBody"></tbody></table>
             </div>
             <div class="summary">
                 <div class="summary-grid">
                     <div class="summary-item"><div class="summary-label">Orders</div><div class="summary-value" id="sellOrders">-</div></div>
                     <div class="summary-item"><div class="summary-label">Volume</div><div class="summary-value" id="sellVol">-</div></div>
-                    <div class="summary-item"><div class="summary-label">Total Rupiah</div><div class="summary-value" id="sellVal">-</div></div>
+                    <div class="summary-item"><div class="summary-label">Total</div><div class="summary-value" id="sellVal">-</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="trade-section">
+        <div class="table-card trade">
+            <div class="table-header">
+                <span class="table-title">🔄 TRADE HISTORY</span>
+                <span class="count-badge" id="tradeCount">-</span>
+            </div>
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:60px">Waktu</th>
+                            <th style="width:50px">Tipe</th>
+                            <th>Harga</th>
+                            <th>Jumlah</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tradeBody"></tbody>
+                </table>
+            </div>
+            <div class="summary">
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <div class="summary-label">Total Buy</div>
+                        <div class="summary-value" id="tradeBuyVol" style="color:var(--buy)">-</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Total Sell</div>
+                        <div class="summary-value" id="tradeSellVol" style="color:var(--sell)">-</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Total Value</div>
+                        <div class="summary-value" id="tradeVal">-</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -185,20 +288,26 @@
     </div>
 
 <script>
+// ==================== HYPER SPEED ENGINE v2.0 ====================
 const CONFIG = {
+    // Ultra-fast proxies dengan failover
     PROXIES: [
         url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
         url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
         url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
     ],
-    TIMEOUT: 5000,
-    RACE_TIMEOUT: 8000,
-    MAX_ROWS: 200,
+    TIMEOUT: 3000,          // Timeout lebih ketat
+    INTERVAL: 100,          // 100ms = 10 updates/detik
+    INTERVAL_FAST: 50,      // 50ms = 20 updates/detik untuk data penting
+    MAX_ROWS: 150,           // Kurangi rows untuk render lebih cepat
     CACHE_TTL: 3600000,
-    PAIRS_KEY: 'idax_pairs_v2',
-    INTERVAL: 150
+    PAIRS_KEY: 'idax_pairs_v3',
+    BATCH_SIZE: 3,          // Parallel requests
+    ADAPTIVE_MIN: 50,       // Min interval
+    ADAPTIVE_MAX: 200,      // Max interval saat error
 };
 
+// ==================== STORAGE ====================
 const Storage = {
     get(k) {
         try {
@@ -213,82 +322,169 @@ const Storage = {
     }
 };
 
-const Fetcher = {
-    async race(url) {
-        const ctrls = CONFIG.PROXIES.map(() => new AbortController());
+// ==================== HYPER FETCHER ====================
+const HyperFetch = {
+    proxyStats: CONFIG.PROXIES.map(() => ({ latency: 500, errors: 0, success: 0 })),
+    activeRequests: new Map(),
+    
+    // Get fastest proxy
+    getFastestProxy() {
+        let best = 0, bestScore = Infinity;
+        this.proxyStats.forEach((s, i) => {
+            const score = s.latency + (s.errors * 100);
+            if (score < bestScore) { bestScore = score; best = i; }
+        });
+        return best;
+    },
+    
+    // Race all proxies - return fastest
+    async race(url, priority = false) {
+        // Dedupe - skip if same request in flight
+        if (!priority && this.activeRequests.has(url)) {
+            return this.activeRequests.get(url);
+        }
         
-        const proms = CONFIG.PROXIES.map(async (fn, i) => {
-            const tid = setTimeout(() => ctrls[i].abort(), CONFIG.TIMEOUT);
+        const controllers = CONFIG.PROXIES.map(() => new AbortController());
+        const startTime = performance.now();
+        
+        const promises = CONFIG.PROXIES.map(async (proxyFn, i) => {
+            const timeout = setTimeout(() => controllers[i].abort(), CONFIG.TIMEOUT);
             try {
-                const r = await fetch(fn(url), { signal: ctrls[i].signal, cache: 'no-store' });
-                clearTimeout(tid);
-                if (!r.ok) throw new Error(r.status);
-                return await r.json();
-            } catch (e) { throw e; }
+                const resp = await fetch(proxyFn(url), {
+                    signal: controllers[i].signal,
+                    cache: 'no-store',
+                    mode: 'cors',
+                    credentials: 'omit',
+                    keepalive: true,
+                    headers: { 'Accept': 'application/json' }
+                });
+                clearTimeout(timeout);
+                
+                if (!resp.ok) throw new Error(resp.status);
+                
+                const data = await resp.json();
+                const elapsed = performance.now() - startTime;
+                
+                // Update stats
+                this.proxyStats[i].latency = this.proxyStats[i].latency * 0.7 + elapsed * 0.3;
+                this.proxyStats[i].success++;
+                
+                return { data, elapsed, proxy: i };
+            } catch (e) {
+                this.proxyStats[i].errors++;
+                throw e;
+            }
         });
         
-        const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('Timeout')), CONFIG.RACE_TIMEOUT));
+        const racePromise = (async () => {
+            try {
+                const result = await Promise.any(promises);
+                controllers.forEach(c => c.abort()); // Cancel others
+                return result;
+            } catch {
+                controllers.forEach(c => c.abort());
+                throw new Error('All proxies failed');
+            }
+        })();
+        
+        this.activeRequests.set(url, racePromise);
         
         try {
-            const r = await Promise.race([Promise.any(proms), timeout]);
-            ctrls.forEach(c => c.abort());
-            return r;
-        } catch { ctrls.forEach(c => c.abort()); throw new Error('All failed'); }
+            const result = await racePromise;
+            return result;
+        } finally {
+            this.activeRequests.delete(url);
+        }
+    },
+    
+    // Parallel batch fetch
+    async batch(urls) {
+        return Promise.allSettled(urls.map(url => this.race(url)));
     }
 };
 
+// ==================== FORMATTERS ====================
 const fmt = {
     price(n) {
-        if (Number.isInteger(n) || n % 1 === 0) {
-            return Math.round(n).toLocaleString('id-ID');
-        }
+        if (n >= 1 && n % 1 === 0) return Math.round(n).toLocaleString('id-ID');
         if (n >= 1) {
             const str = n.toFixed(2);
             return str.endsWith('.00') ? Math.round(n).toLocaleString('id-ID') : parseFloat(str).toLocaleString('id-ID');
         }
         return n >= 0.0001 ? parseFloat(n.toFixed(4)).toString() : parseFloat(n.toFixed(8)).toString();
     },
-    amt(n) {
-        if (n >= 1) return Math.round(n).toLocaleString('id-ID');
-        return parseFloat(n.toFixed(8)).toString();
+    amt(n) { return n >= 1 ? Math.round(n).toLocaleString('id-ID') : parseFloat(n.toFixed(8)).toString(); },
+    tot(n) { return Math.round(n).toLocaleString('id-ID'); },
+    val(n) { return n >= 1e12 ? 'Rp '+(n/1e12).toFixed(2)+'T' : n >= 1e9 ? 'Rp '+(n/1e9).toFixed(2)+'M' : n >= 1e6 ? 'Rp '+(n/1e6).toFixed(2)+'Jt' : 'Rp '+Math.round(n).toLocaleString('id-ID'); },
+    vol(n, c) { return n >= 1e9 ? (n/1e9).toFixed(2)+'M '+c : n >= 1e6 ? (n/1e6).toFixed(2)+'Jt '+c : n >= 1e3 ? (n/1e3).toFixed(1)+'K '+c : n >= 1 ? n.toFixed(4)+' '+c : n.toFixed(8)+' '+c; },
+    time(ts) { return new Date(ts * 1000).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }); },
+    pct(n) { return (n >= 0 ? '+' : '') + n.toFixed(2) + '%'; }
+};
+
+// ==================== OPTIMIZED RENDERER ====================
+const Renderer = {
+    cache: { buy: '', sell: '', trade: '' },
+    lastData: { buy: null, sell: null, trade: null },
+    
+    // Fast table render with DOM diffing
+    table(type, data, coin) {
+        const body = document.getElementById(type + 'Body');
+        const rows = data.slice(0, CONFIG.MAX_ROWS);
+        let vol = 0, val = 0;
+        
+        // Calculate totals
+        const tots = data.map(r => { const p = +r[0], a = +r[1], t = p*a; vol += a; val += t; return t; });
+        const max = Math.max(...tots.slice(0, 20)) || 1;
+        
+        // Build HTML
+        let html = '';
+        for (let i = 0; i < rows.length; i++) {
+            const p = +rows[i][0], a = +rows[i][1], t = p * a;
+            const pct = Math.min((t / max) * 100, 100);
+            html += `<tr><td>${i+1}</td><td>${fmt.price(p)}</td><td>${fmt.amt(a)}</td><td class="depth-cell"><span class="depth-bar" style="width:${pct}%"></span>${fmt.tot(t)}</td></tr>`;
+        }
+        
+        // Only update if changed
+        if (html !== this.cache[type]) {
+            body.innerHTML = html;
+            this.cache[type] = html;
+        }
+        
+        // Update summary
+        const cnt = data.length.toLocaleString('id-ID');
+        document.getElementById(type + 'Count').textContent = cnt;
+        document.getElementById(type + 'Orders').textContent = cnt;
+        document.getElementById(type + 'Vol').textContent = fmt.vol(vol, coin);
+        document.getElementById(type + 'Val').textContent = fmt.val(val);
     },
-    tot(n) {
-        return Math.round(n).toLocaleString('id-ID');
-    },
-    val(n) {
-        return n >= 1e12 ? 'Rp '+(n/1e12).toFixed(2)+'T' : n >= 1e9 ? 'Rp '+(n/1e9).toFixed(2)+'M' : n >= 1e6 ? 'Rp '+(n/1e6).toFixed(2)+'Jt' : 'Rp '+Math.round(n).toLocaleString('id-ID');
-    },
-    vol(n, coin) {
-        if (n >= 1e9) return (n/1e9).toFixed(2)+'M ' + coin;
-        if (n >= 1e6) return (n/1e6).toFixed(2)+'Jt ' + coin;
-        if (n >= 1e3) return (n/1e3).toFixed(1)+'K ' + coin;
-        if (n >= 1) return n.toFixed(4) + ' ' + coin;
-        return n.toFixed(8) + ' ' + coin;
+    
+    trades(trades, coin) {
+        const body = document.getElementById('tradeBody');
+        const rows = trades.slice(0, CONFIG.MAX_ROWS);
+        
+        let buyVol = 0, sellVol = 0, totalVal = 0;
+        let html = '';
+        
+        for (const t of rows) {
+            const price = +t.price, amount = +t.amount, total = price * amount;
+            if (t.type === 'buy') buyVol += amount; else sellVol += amount;
+            totalVal += total;
+            html += `<tr><td class="trade-time">${fmt.time(t.date)}</td><td><span class="trade-type ${t.type}">${t.type === 'buy' ? 'BELI' : 'JUAL'}</span></td><td class="trade-price ${t.type}">${fmt.price(price)}</td><td>${fmt.amt(amount)}</td><td>${fmt.tot(total)}</td></tr>`;
+        }
+        
+        if (html !== this.cache.trade) {
+            body.innerHTML = html;
+            this.cache.trade = html;
+        }
+        
+        document.getElementById('tradeCount').textContent = trades.length.toLocaleString('id-ID');
+        document.getElementById('tradeBuyVol').textContent = fmt.vol(buyVol, coin);
+        document.getElementById('tradeSellVol').textContent = fmt.vol(sellVol, coin);
+        document.getElementById('tradeVal').textContent = fmt.val(totalVal);
     }
 };
 
-function renderTable(type, data, coin) {
-    const body = document.getElementById(type + 'Body');
-    const rows = data.slice(0, CONFIG.MAX_ROWS);
-    let vol = 0, val = 0;
-    const tots = data.map(r => { const p = +r[0], a = +r[1], t = p*a; vol += a; val += t; return t; });
-    const max = Math.max(...tots.slice(0, 20)) || 1;
-    
-    let html = '';
-    for (let i = 0; i < rows.length; i++) {
-        const p = +rows[i][0], a = +rows[i][1], t = p * a;
-        const pct = Math.min((t / max) * 100, 100);
-        html += `<tr><td>${i+1}</td><td>${fmt.price(p)}</td><td>${fmt.amt(a)}</td><td class="depth-cell"><span class="depth-bar" style="width:${pct}%"></span>${fmt.tot(t)}</td></tr>`;
-    }
-    body.innerHTML = html;
-    
-    const cnt = data.length.toLocaleString('id-ID');
-    document.getElementById(type + 'Count').textContent = cnt;
-    document.getElementById(type + 'Orders').textContent = cnt;
-    document.getElementById(type + 'Vol').textContent = fmt.vol(vol, coin);
-    document.getElementById(type + 'Val').textContent = fmt.val(val);
-}
-
+// ==================== DROPDOWN ====================
 const Drop = {
     open: false,
     init() {
@@ -315,68 +511,229 @@ const Drop = {
     },
     render(pairs, q) {
         if (!pairs.length) { this.list.innerHTML = '<div class="dropdown-empty">Tidak ditemukan</div>'; return; }
-        this.list.innerHTML = pairs.map(p => {
+        this.list.innerHTML = pairs.slice(0, 50).map(p => {
             let n = p.description, id = p.id.toUpperCase();
             if (q) { const rx = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`,'gi'); n = n.replace(rx,'<span class="dropdown-highlight">$1</span>'); id = id.replace(rx,'<span class="dropdown-highlight">$1</span>'); }
             return `<div class="dropdown-item${p.id===App.pair?' selected':''}" data-id="${p.id}" data-n="${p.description}"><span class="pair-name">${n}</span><span class="pair-id">${id}</span></div>`;
         }).join('');
-        this.list.querySelectorAll('.dropdown-item').forEach(i => i.onclick = () => { this.text.textContent = `${i.dataset.n} (${i.dataset.id.toUpperCase()})`; this.close(); if (i.dataset.id !== App.pair) App.load(i.dataset.id); });
+        this.list.querySelectorAll('.dropdown-item').forEach(i => i.onclick = () => { this.text.textContent = `${i.dataset.n} (${i.dataset.id.toUpperCase()})`; this.close(); if (i.dataset.id !== App.pair) App.switchPair(i.dataset.id); });
     },
     set(id) { const p = App.pairs.find(x => x.id === id); if (p) this.text.textContent = `${p.description} (${id.toUpperCase()})`; }
 };
 
+// ==================== MAIN APP ====================
 const App = {
     pairs: [],
     pair: 'btcidr',
     coin: 'BTC',
-    loading: false,
-    timer: null,
+    summaries: null,
+    prevPrice: null,
+    
+    // Stats
+    updateCount: 0,
+    lastLatency: 0,
+    updatesPerSecond: 0,
+    updateTimes: [],
+    
+    // Timers
+    mainLoop: null,
+    fastLoop: null,
+    statsLoop: null,
+    
+    // Adaptive interval
+    currentInterval: CONFIG.INTERVAL,
+    consecutiveErrors: 0,
     
     async init() {
         Drop.init();
+        this.startStatsLoop();
         
         try {
+            document.getElementById('initStatus').textContent = 'Loading pairs...';
+            
+            // Load cached pairs first
             const cached = Storage.get(CONFIG.PAIRS_KEY);
             if (cached) {
                 this.pairs = cached;
                 Drop.populate(cached);
                 Drop.set('btcidr');
-                await this.load('btcidr');
-                this.bgUpdate();
-            } else {
-                document.getElementById('initStatus').textContent = 'Loading data...';
-                const [pr, ob] = await Promise.allSettled([
-                    Fetcher.race('https://indodax.com/api/pairs'),
-                    Fetcher.race('https://indodax.com/api/depth/btcidr')
-                ]);
-                if (pr.status === 'fulfilled') {
-                    this.pairs = pr.value.sort((a,b) => a.description.localeCompare(b.description));
-                    Storage.set(CONFIG.PAIRS_KEY, this.pairs);
-                    Drop.populate(this.pairs);
-                    Drop.set('btcidr');
-                }
-                if (ob.status === 'fulfilled') this.process(ob.value, 'btcidr');
-                else await this.load('btcidr');
             }
             
+            // Initial data load
+            document.getElementById('initStatus').textContent = 'Fetching market data...';
+            
+            const urls = [
+                'https://indodax.com/api/pairs',
+                'https://indodax.com/api/depth/btcidr',
+                'https://indodax.com/api/trades/btcidr',
+                'https://indodax.com/api/summaries'
+            ];
+            
+            const results = await HyperFetch.batch(urls);
+            
+            // Process pairs
+            if (results[0].status === 'fulfilled') {
+                this.pairs = results[0].value.data.sort((a,b) => a.description.localeCompare(b.description));
+                Storage.set(CONFIG.PAIRS_KEY, this.pairs);
+                Drop.populate(this.pairs);
+                Drop.set('btcidr');
+            }
+            
+            // Process initial data
+            if (results[3].status === 'fulfilled') {
+                this.summaries = results[3].value.data;
+                this.processSummary('btcidr');
+            }
+            if (results[1].status === 'fulfilled') {
+                this.processDepth(results[1].value.data, 'btcidr');
+            }
+            if (results[2].status === 'fulfilled') {
+                this.processTrades(results[2].value.data, 'btcidr');
+            }
+            
+            // Hide loading
             document.getElementById('initLoading').classList.add('hidden');
-            this.startAuto();
+            
+            // Start hyper loops
+            this.startHyperLoop();
+            
         } catch (e) {
             document.getElementById('initStatus').textContent = '❌ ' + e.message;
-            setTimeout(() => this.init(), 3000);
+            setTimeout(() => this.init(), 2000);
         }
     },
     
-    async bgUpdate() {
-        try {
-            const r = await Fetcher.race('https://indodax.com/api/pairs');
-            this.pairs = r.sort((a,b) => a.description.localeCompare(b.description));
-            Storage.set(CONFIG.PAIRS_KEY, this.pairs);
-            Drop.populate(this.pairs);
-        } catch {}
+    startHyperLoop() {
+        // Main loop - depth & trades
+        const mainFetch = async () => {
+            const start = performance.now();
+            
+            try {
+                const results = await HyperFetch.batch([
+                    `https://indodax.com/api/depth/${this.pair}`,
+                    `https://indodax.com/api/trades/${this.pair}`,
+                    'https://indodax.com/api/summaries'
+                ]);
+                
+                const elapsed = performance.now() - start;
+                this.lastLatency = Math.round(elapsed);
+                this.recordUpdate();
+                
+                // Process results
+                if (results[2].status === 'fulfilled') {
+                    this.summaries = results[2].value.data;
+                    this.processSummary(this.pair);
+                }
+                if (results[0].status === 'fulfilled') {
+                    this.processDepth(results[0].value.data, this.pair);
+                }
+                if (results[1].status === 'fulfilled') {
+                    this.processTrades(results[1].value.data, this.pair);
+                }
+                
+                // Update timestamp
+                document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 }) + ' | ' + this.pair.toUpperCase();
+                
+                // Adaptive - speed up on success
+                this.consecutiveErrors = 0;
+                this.currentInterval = Math.max(CONFIG.ADAPTIVE_MIN, this.currentInterval * 0.9);
+                
+            } catch (e) {
+                // Adaptive - slow down on error
+                this.consecutiveErrors++;
+                this.currentInterval = Math.min(CONFIG.ADAPTIVE_MAX, this.currentInterval * 1.5);
+            }
+            
+            // Schedule next
+            this.mainLoop = setTimeout(mainFetch, this.currentInterval);
+        };
+        
+        mainFetch();
     },
     
-    process(data, id) {
+    recordUpdate() {
+        this.updateCount++;
+        const now = Date.now();
+        this.updateTimes.push(now);
+        // Keep last 5 seconds
+        this.updateTimes = this.updateTimes.filter(t => now - t < 5000);
+        document.getElementById('totalUpdates').textContent = this.updateCount.toLocaleString();
+    },
+    
+    startStatsLoop() {
+        setInterval(() => {
+            // Calculate updates per second
+            const now = Date.now();
+            const recent = this.updateTimes.filter(t => now - t < 1000).length;
+            document.getElementById('ups').textContent = recent;
+            document.getElementById('latency').textContent = this.lastLatency;
+        }, 100);
+    },
+    
+    switchPair(id) {
+        this.pair = id;
+        const p = this.pairs.find(x => x.id === id);
+        this.coin = p ? p.description.split('/')[0].trim() : id.replace('idr','').toUpperCase();
+        this.prevPrice = null;
+        Renderer.cache = { buy: '', sell: '', trade: '' };
+        
+        // Force immediate update
+        if (this.mainLoop) clearTimeout(this.mainLoop);
+        this.startHyperLoop();
+    },
+    
+    pairToTicker(id) {
+        const idrIndex = id.toLowerCase().lastIndexOf('idr');
+        return idrIndex > 0 ? id.substring(0, idrIndex) + '_idr' : id;
+    },
+    
+    processSummary(id) {
+        if (!this.summaries?.tickers) return;
+        
+        const tickerKey = this.pairToTicker(id);
+        const ticker = this.summaries.tickers[tickerKey];
+        if (!ticker) return;
+        
+        const last = +ticker.last;
+        const high = +ticker.high;
+        const low = +ticker.low;
+        const coinKey = tickerKey.split('_')[0];
+        const volCoin = +ticker['vol_' + coinKey] || 0;
+        const volIdr = +ticker.vol_idr || 0;
+        
+        // 24h change
+        const price24h = ticker.price_24h ? +ticker.price_24h : null;
+        let changePercent = 0;
+        if (price24h && price24h > 0) {
+            changePercent = ((last - price24h) / price24h) * 100;
+        }
+        
+        // Update UI
+        const priceEl = document.getElementById('lastPrice');
+        priceEl.textContent = fmt.price(last);
+        
+        // Flash effect
+        if (this.prevPrice !== null && last !== this.prevPrice) {
+            priceEl.classList.remove('flash-up', 'flash-down');
+            void priceEl.offsetWidth; // Force reflow
+            priceEl.classList.add(last > this.prevPrice ? 'flash-up' : 'flash-down');
+            setTimeout(() => priceEl.classList.remove('flash-up', 'flash-down'), 300);
+        }
+        this.prevPrice = last;
+        
+        const changeEl = document.getElementById('priceChange');
+        if (changePercent !== 0) {
+            changeEl.textContent = fmt.pct(changePercent);
+            changeEl.className = 'price-change ' + (changePercent >= 0 ? 'up' : 'down');
+        }
+        
+        document.getElementById('high24').textContent = fmt.price(high);
+        document.getElementById('low24').textContent = fmt.price(low);
+        document.getElementById('vol24').textContent = fmt.vol(volCoin, this.coin);
+        document.getElementById('volIdr24').textContent = fmt.val(volIdr);
+    },
+    
+    processDepth(data, id) {
         const buy = data.buy || [], sell = data.sell || [];
         
         if (buy.length && sell.length) {
@@ -386,35 +743,18 @@ const App = {
             document.getElementById('spread').textContent = `${fmt.price(s)} (${((s/a)*100).toFixed(3)}%)`;
         }
         
-        renderTable('buy', buy, this.coin);
-        renderTable('sell', sell, this.coin);
-        
-        document.getElementById('lastUpdate').textContent = `${new Date().toLocaleTimeString('id-ID')} | ${id.toUpperCase()}`;
+        Renderer.table('buy', buy, this.coin);
+        Renderer.table('sell', sell, this.coin);
         Drop.set(id);
     },
     
-    startAuto() {
-        if (this.timer) clearInterval(this.timer);
-        this.timer = setInterval(() => this.load(this.pair, true), CONFIG.INTERVAL);
-    },
-    
-    async load(id, rt = false) {
-        if (this.loading && rt) return;
-        this.loading = true;
-        this.pair = id;
-        const p = this.pairs.find(x => x.id === id);
-        this.coin = p ? p.description.split('/')[0].trim() : id.replace('idr','').toUpperCase();
-        
-        try {
-            const r = await Fetcher.race(`https://indodax.com/api/depth/${id}`);
-            this.process(r, id);
-        } catch (e) {
-            console.error(e);
-        }
-        this.loading = false;
+    processTrades(data, id) {
+        const trades = Array.isArray(data) ? data : [];
+        Renderer.trades(trades, this.coin);
     }
 };
 
+// ==================== START ====================
 App.init();
 </script>
 </body>
