@@ -170,15 +170,15 @@
     
     <div class="price-bar" id="priceBar" style="display:none">
         <div class="price-item">
-            <div class="price-label">Harga Beli Terbaik</div>
+            <div class="price-label">Best Bid</div>
             <div class="price-value buy" id="bestBid">-</div>
         </div>
         <div class="price-item spread-item">
-            <div class="price-label">Selisih Harga</div>
+            <div class="price-label">Spread</div>
             <div class="price-value spread" id="spread">-</div>
         </div>
         <div class="price-item">
-            <div class="price-label">Harga Jual Terbaik</div>
+            <div class="price-label">Best Ask</div>
             <div class="price-value sell" id="bestAsk">-</div>
         </div>
     </div>
@@ -226,7 +226,7 @@
     </div>
     
     <div class="footer">
-        <div>Terakhir Update: <span id="lastUpdate">-</span> | Data dari <a href="https://indodax.com" target="_blank">Indodax</a></div>
+        <div>Last Update: <span id="lastUpdate">-</span> | Data by <a href="https://indodax.com" target="_blank">Indodax</a></div>
         <div class="perf-stats">
             <span class="perf-stat" id="fetchTime">⏱️ Fetch: --ms</span>
             <span class="perf-stat" id="renderTime">🎨 Render: --ms</span>
@@ -294,7 +294,6 @@ const Fetcher = {
                 
                 this.stats[i].time = this.stats[i].time * 0.7 + elapsed * 0.3;
                 this.stats[i].fails = Math.max(0, this.stats[i].fails - 1);
-                this.proxyIndex = i;
                 
                 return { data, elapsed, proxy: i };
                 
@@ -305,23 +304,17 @@ const Fetcher = {
         }
         
         clearTimeout(timeoutId);
-        throw lastError || new Error('Semua proxy gagal');
+        throw lastError || new Error('All proxies failed');
     }
 };
 
 const Renderer = {
-    formatRupiah(n) {
+    // Format harga dengan Rp
+    formatPrice(n) {
         if (n >= 1000) return 'Rp ' + n.toLocaleString('id-ID');
         if (n >= 1) return 'Rp ' + n.toFixed(2);
         if (n >= 0.0001) return 'Rp ' + n.toFixed(4);
         return 'Rp ' + n.toFixed(8);
-    },
-    
-    formatPrice(n) {
-        if (n >= 1000) return n.toLocaleString('id-ID');
-        if (n >= 1) return n.toFixed(2);
-        if (n >= 0.0001) return n.toFixed(4);
-        return n.toFixed(8);
     },
     
     formatAmount(n) {
@@ -332,14 +325,16 @@ const Renderer = {
         return n.toFixed(8);
     },
     
+    // Format total dengan Rp
     formatTotal(n) {
-        if (n >= 1e12) return (n / 1e12).toFixed(1) + ' T';
-        if (n >= 1e9) return (n / 1e9).toFixed(1) + ' M';
-        if (n >= 1e6) return (n / 1e6).toFixed(1) + ' Jt';
-        if (n >= 1e3) return (n / 1e3).toFixed(0) + ' Rb';
-        return n.toFixed(0);
+        if (n >= 1e12) return 'Rp ' + (n / 1e12).toFixed(1) + ' T';
+        if (n >= 1e9) return 'Rp ' + (n / 1e9).toFixed(1) + ' M';
+        if (n >= 1e6) return 'Rp ' + (n / 1e6).toFixed(1) + ' Jt';
+        if (n >= 1e3) return 'Rp ' + (n / 1e3).toFixed(0) + ' Rb';
+        return 'Rp ' + n.toFixed(0);
     },
     
+    // Format nilai summary dengan Rp
     formatValue(n) {
         if (n >= 1e12) return 'Rp ' + (n / 1e12).toFixed(2) + ' Triliun';
         if (n >= 1e9) return 'Rp ' + (n / 1e9).toFixed(2) + ' Miliar';
@@ -406,7 +401,6 @@ const Dropdown = {
     isOpen: false,
     
     init() {
-        this.wrap = document.getElementById('dropdownWrap');
         this.selected = document.getElementById('dropdownSelected');
         this.menu = document.getElementById('dropdownMenu');
         this.search = document.getElementById('dropdownSearch');
@@ -422,18 +416,13 @@ const Dropdown = {
             this.filter(e.target.value);
         });
         
-        this.menu.addEventListener('click', (e) => {
-            e.stopPropagation();
-        });
+        this.menu.addEventListener('click', (e) => e.stopPropagation());
         
-        document.addEventListener('click', () => {
-            this.close();
-        });
+        document.addEventListener('click', () => this.close());
         
         this.search.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                this.close();
-            } else if (e.key === 'Enter') {
+            if (e.key === 'Escape') this.close();
+            else if (e.key === 'Enter') {
                 const first = this.list.querySelector('.dropdown-item');
                 if (first) first.click();
             }
@@ -657,7 +646,7 @@ const App = {
             this.el.totalTime.className = 'perf-stat ' + this.getSpeedClass(totalTime);
             
             this.el.lastUpdate.textContent = new Date().toLocaleTimeString('id-ID') + 
-                ` | ${pairId.toUpperCase()} | ${buyData.length + sellData.length} order`;
+                ` | ${pairId.toUpperCase()} | ${buyData.length + sellData.length} orders`;
             
             this.setStatus('✓ Ready', 'success');
             this.el.wsStatus.className = 'dot';
