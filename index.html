@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Order Book Indodax - Hyper Speed v3.1</title>
+    <title>Order Book Indodax - Hyper Speed v3.2</title>
     
     <link rel="dns-prefetch" href="//indodax.com">
     <link rel="dns-prefetch" href="//corsproxy.io">
@@ -31,30 +31,41 @@
         
         .controls{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px;padding:10px;background:var(--card);border-radius:10px;margin:10px 0}
         
-        /* Custom Searchable Dropdown */
-        .dropdown-wrap{position:relative;min-width:280px}
-        .dropdown-selected{width:100%;padding:10px 35px 10px 12px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .2s}
-        .dropdown-selected:hover{border-color:var(--accent)}
-        .dropdown-selected.active{border-color:var(--accent);border-radius:6px 6px 0 0}
-        .dropdown-selected::after{content:'▼';font-size:10px;color:var(--muted);transition:transform .2s}
-        .dropdown-selected.active::after{transform:rotate(180deg)}
-        .dropdown-menu{position:absolute;top:100%;left:0;right:0;background:var(--bg);border:1px solid var(--accent);border-top:none;border-radius:0 0 6px 6px;max-height:0;overflow:hidden;z-index:1000;transition:max-height .3s ease}
-        .dropdown-menu.open{max-height:350px}
-        .dropdown-search{width:100%;padding:10px 12px;border:none;border-bottom:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px;outline:none}
-        .dropdown-search::placeholder{color:var(--muted)}
-        .dropdown-list{max-height:280px;overflow-y:auto}
-        .dropdown-list::-webkit-scrollbar{width:4px}
-        .dropdown-list::-webkit-scrollbar-track{background:var(--bg)}
-        .dropdown-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-        .dropdown-item{padding:10px 12px;cursor:pointer;transition:background .15s;display:flex;justify-content:space-between;align-items:center}
-        .dropdown-item:hover{background:rgba(0,212,255,.1)}
-        .dropdown-item.selected{background:rgba(0,212,255,.2)}
-        .dropdown-item .pair-name{font-weight:500}
-        .dropdown-item .pair-id{font-size:11px;color:var(--muted);font-family:'SF Mono',Consolas,monospace}
-        .dropdown-empty{padding:20px;text-align:center;color:var(--muted);font-size:12px}
-        .dropdown-highlight{background:var(--accent);color:#000;padding:0 2px;border-radius:2px}
+        /* Search Dropdown Styles */
+        .select-wrap{position:relative;min-width:280px}
+        .select-display{width:100%;padding:10px 35px 10px 12px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .2s}
+        .select-display:hover{border-color:var(--accent)}
+        .select-display.open{border-color:var(--accent);border-radius:6px 6px 0 0}
+        .select-display::after{content:'▼';position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--muted);transition:transform .2s}
+        .select-display.open::after{transform:translateY(-50%) rotate(180deg)}
+        .select-icon{font-size:16px}
+        .select-text{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .select-pair{font-size:10px;color:var(--accent);background:rgba(0,212,255,.1);padding:2px 6px;border-radius:4px}
         
-        .current-pair{font-size:11px;color:var(--accent);margin-left:5px}
+        .search-dropdown{position:absolute;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--accent);border-top:none;border-radius:0 0 6px 6px;display:none;z-index:1000;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+        .search-dropdown.show{display:block}
+        .search-input-wrap{position:relative;border-bottom:1px solid var(--border)}
+        .search-input-wrap::before{content:'🔍';position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px}
+        .search-input{width:100%;padding:12px 12px 12px 38px;border:none;background:var(--bg);color:var(--text);font-size:13px;outline:none}
+        .search-input::placeholder{color:var(--muted)}
+        .search-options{max-height:280px;overflow-y:auto}
+        .search-options::-webkit-scrollbar{width:4px}
+        .search-options::-webkit-scrollbar-track{background:var(--bg)}
+        .search-options::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+        .search-option{padding:10px 12px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:background .1s;border-bottom:1px solid rgba(255,255,255,.02)}
+        .search-option:hover{background:rgba(0,212,255,.1)}
+        .search-option.selected{background:rgba(0,212,255,.15)}
+        .search-option.hidden{display:none}
+        .option-icon{font-size:18px;width:24px;text-align:center}
+        .option-info{flex:1;min-width:0}
+        .option-name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .option-pair{font-size:10px;color:var(--muted);margin-top:2px}
+        .option-check{color:var(--accent);font-size:14px;opacity:0}
+        .search-option.selected .option-check{opacity:1}
+        .no-result{padding:20px;text-align:center;color:var(--muted);display:none}
+        .no-result.show{display:block}
+        .search-stats{padding:8px 12px;background:rgba(0,0,0,.2);font-size:10px;color:var(--muted);display:flex;justify-content:space-between}
+        
         .btn{padding:10px 20px;border:none;border-radius:6px;font-weight:600;cursor:pointer;transition:all .15s;font-size:12px}
         .btn-primary{background:var(--accent);color:#000}
         .btn-primary:hover{filter:brightness(1.2);transform:scale(1.02)}
@@ -132,12 +143,15 @@
         .error-box{text-align:center;padding:30px;color:var(--sell)}
         .error-box button{margin-top:10px}
         
+        /* Keyboard navigation highlight */
+        .search-option.keyboard-focus{background:rgba(0,212,255,.2);outline:1px solid var(--accent)}
+        
         @media(max-width:768px){
             .tables{grid-template-columns:1fr}
             .price-bar{grid-template-columns:1fr 1fr;gap:8px}
             .price-item:first-child,.price-item:last-child{text-align:center}
             .price-item.spread-item{grid-column:span 2}
-            .dropdown-wrap{min-width:100%;max-width:100%}
+            .select-wrap{min-width:100%;max-width:100%}
         }
     </style>
 </head>
@@ -145,7 +159,7 @@
     <div class="header">
         <div class="logo">
             ⚡ HYPER ORDER BOOK
-            <span class="badge">v3.1 FIXED</span>
+            <span class="badge">v3.2</span>
         </div>
         <div class="speed-indicator">
             <span><span class="dot" id="wsStatus"></span> <span id="wsText">Connecting...</span></span>
@@ -155,16 +169,26 @@
     </div>
     
     <div class="controls">
-        <div class="dropdown-wrap" id="dropdownWrap">
-            <div class="dropdown-selected" id="dropdownSelected">
-                <span id="selectedText">Pilih Koin...</span>
+        <!-- Searchable Dropdown -->
+        <div class="select-wrap" id="selectWrap">
+            <div class="select-display" id="selectDisplay">
+                <span class="select-icon">🪙</span>
+                <span class="select-text" id="selectText">Loading...</span>
+                <span class="select-pair" id="selectPair">---</span>
             </div>
-            <div class="dropdown-menu" id="dropdownMenu">
-                <input type="text" class="dropdown-search" id="dropdownSearch" placeholder="🔍 Cari koin... (cth: BTC, ETH, DOGE)">
-                <div class="dropdown-list" id="dropdownList"></div>
+            <div class="search-dropdown" id="searchDropdown">
+                <div class="search-input-wrap">
+                    <input type="text" class="search-input" id="searchInput" placeholder="Ketik untuk mencari koin..." autocomplete="off">
+                </div>
+                <div class="search-options" id="searchOptions"></div>
+                <div class="no-result" id="noResult">😕 Tidak ditemukan</div>
+                <div class="search-stats">
+                    <span id="searchCount">0 koin</span>
+                    <span>↑↓ Navigate • Enter Select • Esc Close</span>
+                </div>
             </div>
         </div>
-        <span class="current-pair" id="currentPairDisplay"></span>
+        
         <button class="btn btn-primary" id="refreshBtn">⚡ REFRESH</button>
         <span class="status-badge" id="status"></span>
     </div>
@@ -237,7 +261,7 @@
 
 <script>
 // ============================================
-// 🚀 HYPER SPEED ENGINE v3.1 - BUG FIXED
+// 🚀 HYPER SPEED ENGINE v3.2 - WITH SEARCH
 // ============================================
 
 const CONFIG = {
@@ -250,6 +274,19 @@ const CONFIG = {
     MAX_ROWS: 150,
     CACHE_TTL: 3600000
 };
+
+// Crypto icons mapping
+const CRYPTO_ICONS = {
+    btc: '₿', eth: '⟠', doge: '🐕', shib: '🐕', xrp: '✕', bnb: '⬡', sol: '◎', ada: '₳',
+    dot: '●', matic: '⬡', link: '⬡', uni: '🦄', atom: '⚛', ltc: 'Ł', etc: '⟠',
+    trx: '◈', xlm: '✦', vet: '✔', fil: '⨎', theta: 'ϑ', icp: '∞', aave: '👻',
+    default: '🪙'
+};
+
+function getCryptoIcon(id) {
+    const symbol = id.replace('idr', '').toLowerCase();
+    return CRYPTO_ICONS[symbol] || CRYPTO_ICONS.default;
+}
 
 // ============================================
 // 💾 SIMPLE CACHE
@@ -269,10 +306,6 @@ const Cache = {
     
     set(key, value, ttl = CONFIG.CACHE_TTL) {
         this.data.set(key, { value, exp: Date.now() + ttl });
-    },
-    
-    clear() {
-        this.data.clear();
     }
 };
 
@@ -280,7 +313,6 @@ const Cache = {
 // ⚡ HYPER FETCH
 // ============================================
 const Fetcher = {
-    proxyIndex: 0,
     stats: CONFIG.PROXIES.map(() => ({ time: 1000, fails: 0 })),
     
     async fetch(url) {
@@ -296,8 +328,6 @@ const Fetcher = {
         for (const { fn, i } of sorted) {
             try {
                 const proxyUrl = fn(url);
-                console.log(`[Fetch] Trying proxy ${i}:`, proxyUrl);
-                
                 const start = performance.now();
                 const res = await fetch(proxyUrl, { 
                     signal: controller.signal,
@@ -313,13 +343,10 @@ const Fetcher = {
                 
                 this.stats[i].time = this.stats[i].time * 0.7 + elapsed * 0.3;
                 this.stats[i].fails = Math.max(0, this.stats[i].fails - 1);
-                this.proxyIndex = i;
                 
-                console.log(`[Fetch] Success via proxy ${i} in ${elapsed.toFixed(0)}ms`);
                 return { data, elapsed, proxy: i };
                 
             } catch (e) {
-                console.warn(`[Fetch] Proxy ${i} failed:`, e.message);
                 this.stats[i].fails++;
                 lastError = e;
             }
@@ -366,8 +393,6 @@ const Renderer = {
     },
     
     renderTable(type, data, coinName) {
-        console.log(`[Render] ${type} - ${data.length} orders for ${coinName}`);
-        
         const tbody = document.getElementById(type + 'Body');
         const display = data.slice(0, CONFIG.MAX_ROWS);
         
@@ -404,20 +429,16 @@ const Renderer = {
         document.getElementById(type + 'Orders').textContent = data.length.toLocaleString();
         document.getElementById(type + 'Vol').textContent = this.formatAmount(totalVol) + ' ' + coinName;
         document.getElementById(type + 'Val').textContent = this.formatValue(totalVal);
-        
-        console.log(`[Render] ${type} done - Vol: ${totalVol}, Val: ${totalVal}`);
     },
     
     showSkeleton(type) {
-        const tbody = document.getElementById(type + 'Body');
-        tbody.innerHTML = Array(10).fill(
+        document.getElementById(type + 'Body').innerHTML = Array(10).fill(
             '<tr><td colspan="4"><div class="skeleton skeleton-row"></div></td></tr>'
         ).join('');
     },
     
     showError(type, message) {
-        const tbody = document.getElementById(type + 'Body');
-        tbody.innerHTML = `<tr><td colspan="4" class="error-box">
+        document.getElementById(type + 'Body').innerHTML = `<tr><td colspan="4" class="error-box">
             ❌ ${message}<br>
             <button class="btn btn-primary" onclick="App.refresh()">🔄 Retry</button>
         </td></tr>`;
@@ -425,50 +446,72 @@ const Renderer = {
 };
 
 // ============================================
-// 🔍 SEARCHABLE DROPDOWN
+// 🔍 SEARCH DROPDOWN
 // ============================================
-const Dropdown = {
+const SearchDropdown = {
     isOpen: false,
-    filteredPairs: [],
+    keyboardIndex: -1,
+    filteredOptions: [],
+    
+    el: {},
     
     init() {
-        this.wrap = document.getElementById('dropdownWrap');
-        this.selected = document.getElementById('dropdownSelected');
-        this.menu = document.getElementById('dropdownMenu');
-        this.search = document.getElementById('dropdownSearch');
-        this.list = document.getElementById('dropdownList');
-        this.selectedText = document.getElementById('selectedText');
+        this.el = {
+            wrap: document.getElementById('selectWrap'),
+            display: document.getElementById('selectDisplay'),
+            text: document.getElementById('selectText'),
+            pair: document.getElementById('selectPair'),
+            dropdown: document.getElementById('searchDropdown'),
+            input: document.getElementById('searchInput'),
+            options: document.getElementById('searchOptions'),
+            noResult: document.getElementById('noResult'),
+            count: document.getElementById('searchCount')
+        };
         
-        // Toggle dropdown
-        this.selected.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.toggle();
-        });
+        // Click on display to toggle
+        this.el.display.addEventListener('click', () => this.toggle());
         
         // Search input
-        this.search.addEventListener('input', (e) => {
-            this.filter(e.target.value);
-        });
+        this.el.input.addEventListener('input', () => this.filter());
+        this.el.input.addEventListener('keydown', (e) => this.handleKeyboard(e));
         
-        // Prevent close when clicking inside menu
-        this.menu.addEventListener('click', (e) => {
-            e.stopPropagation();
-        });
-        
-        // Close on outside click
-        document.addEventListener('click', () => {
-            this.close();
-        });
-        
-        // Keyboard navigation
-        this.search.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
+        // Click outside to close
+        document.addEventListener('click', (e) => {
+            if (!this.el.wrap.contains(e.target)) {
                 this.close();
-            } else if (e.key === 'Enter') {
-                const first = this.list.querySelector('.dropdown-item');
-                if (first) first.click();
             }
         });
+        
+        // Click on option
+        this.el.options.addEventListener('click', (e) => {
+            const option = e.target.closest('.search-option');
+            if (option) {
+                this.select(option.dataset.id);
+            }
+        });
+    },
+    
+    buildOptions(pairs, currentId) {
+        this.el.options.innerHTML = pairs.map(p => `
+            <div class="search-option${p.id === currentId ? ' selected' : ''}" data-id="${p.id}">
+                <span class="option-icon">${getCryptoIcon(p.id)}</span>
+                <div class="option-info">
+                    <div class="option-name">${p.description}</div>
+                    <div class="option-pair">${p.id.toUpperCase()}</div>
+                </div>
+                <span class="option-check">✓</span>
+            </div>
+        `).join('');
+        
+        this.el.count.textContent = `${pairs.length} koin`;
+        this.filteredOptions = [...this.el.options.querySelectorAll('.search-option')];
+    },
+    
+    updateDisplay(pair) {
+        if (pair) {
+            this.el.text.textContent = pair.description;
+            this.el.pair.textContent = pair.id.toUpperCase();
+        }
     },
     
     toggle() {
@@ -481,99 +524,105 @@ const Dropdown = {
     
     open() {
         this.isOpen = true;
-        this.selected.classList.add('active');
-        this.menu.classList.add('open');
-        this.search.value = '';
-        this.filter('');
-        setTimeout(() => this.search.focus(), 100);
+        this.el.display.classList.add('open');
+        this.el.dropdown.classList.add('show');
+        this.el.input.value = '';
+        this.filter();
+        this.el.input.focus();
+        this.keyboardIndex = -1;
+        this.clearKeyboardFocus();
     },
     
     close() {
         this.isOpen = false;
-        this.selected.classList.remove('active');
-        this.menu.classList.remove('open');
+        this.el.display.classList.remove('open');
+        this.el.dropdown.classList.remove('show');
+        this.keyboardIndex = -1;
+        this.clearKeyboardFocus();
     },
     
-    populate(pairs) {
-        this.filteredPairs = pairs;
-        this.renderList(pairs, '');
-    },
-    
-    filter(query) {
-        const q = query.toLowerCase().trim();
+    filter() {
+        const query = this.el.input.value.toLowerCase().trim();
+        let visibleCount = 0;
         
-        if (!q) {
-            this.filteredPairs = App.pairs;
-        } else {
-            this.filteredPairs = App.pairs.filter(p => 
-                p.description.toLowerCase().includes(q) ||
-                p.id.toLowerCase().includes(q)
-            );
-        }
+        this.filteredOptions = [];
         
-        this.renderList(this.filteredPairs, q);
-    },
-    
-    renderList(pairs, query) {
-        if (pairs.length === 0) {
-            this.list.innerHTML = '<div class="dropdown-empty">😕 Tidak ditemukan koin dengan kata kunci tersebut</div>';
-            return;
-        }
-        
-        this.list.innerHTML = pairs.map(p => {
-            let name = p.description;
-            let id = p.id.toUpperCase();
+        this.el.options.querySelectorAll('.search-option').forEach(opt => {
+            const name = opt.querySelector('.option-name').textContent.toLowerCase();
+            const pair = opt.querySelector('.option-pair').textContent.toLowerCase();
+            const match = name.includes(query) || pair.includes(query);
             
-            // Highlight matching text
-            if (query) {
-                const regex = new RegExp(`(${this.escapeRegex(query)})`, 'gi');
-                name = name.replace(regex, '<span class="dropdown-highlight">$1</span>');
-                id = id.replace(regex, '<span class="dropdown-highlight">$1</span>');
+            opt.classList.toggle('hidden', !match);
+            if (match) {
+                visibleCount++;
+                this.filteredOptions.push(opt);
             }
-            
-            const isSelected = p.id === App.currentPair;
-            
-            return `<div class="dropdown-item${isSelected ? ' selected' : ''}" data-id="${p.id}" data-name="${p.description}">
-                <span class="pair-name">${name}</span>
-                <span class="pair-id">${id}</span>
-            </div>`;
-        }).join('');
+        });
         
-        // Add click handlers
-        this.list.querySelectorAll('.dropdown-item').forEach(item => {
-            item.addEventListener('click', () => {
-                const id = item.dataset.id;
-                const name = item.dataset.name;
-                this.select(id, name);
-            });
+        this.el.noResult.classList.toggle('show', visibleCount === 0);
+        this.el.count.textContent = `${visibleCount} koin`;
+        
+        // Reset keyboard navigation
+        this.keyboardIndex = -1;
+        this.clearKeyboardFocus();
+    },
+    
+    handleKeyboard(e) {
+        const opts = this.filteredOptions;
+        
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                this.keyboardIndex = Math.min(this.keyboardIndex + 1, opts.length - 1);
+                this.updateKeyboardFocus();
+                break;
+                
+            case 'ArrowUp':
+                e.preventDefault();
+                this.keyboardIndex = Math.max(this.keyboardIndex - 1, 0);
+                this.updateKeyboardFocus();
+                break;
+                
+            case 'Enter':
+                e.preventDefault();
+                if (this.keyboardIndex >= 0 && opts[this.keyboardIndex]) {
+                    this.select(opts[this.keyboardIndex].dataset.id);
+                }
+                break;
+                
+            case 'Escape':
+                e.preventDefault();
+                this.close();
+                break;
+        }
+    },
+    
+    updateKeyboardFocus() {
+        this.clearKeyboardFocus();
+        
+        if (this.keyboardIndex >= 0 && this.filteredOptions[this.keyboardIndex]) {
+            const opt = this.filteredOptions[this.keyboardIndex];
+            opt.classList.add('keyboard-focus');
+            opt.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+    },
+    
+    clearKeyboardFocus() {
+        this.el.options.querySelectorAll('.keyboard-focus').forEach(el => {
+            el.classList.remove('keyboard-focus');
         });
     },
     
-    select(id, name) {
-        this.selectedText.textContent = `${name} (${id.toUpperCase()})`;
+    select(id) {
+        // Update selected state
+        this.el.options.querySelectorAll('.search-option').forEach(opt => {
+            opt.classList.toggle('selected', opt.dataset.id === id);
+        });
+        
         this.close();
         
-        // Update selected state
-        this.list.querySelectorAll('.dropdown-item').forEach(item => {
-            item.classList.toggle('selected', item.dataset.id === id);
-        });
-        
         // Trigger load
-        if (id !== App.currentPair) {
-            console.log('[Dropdown] Selected:', id);
-            App.loadOrderBook(id);
-        }
-    },
-    
-    setSelected(id) {
-        const pair = App.pairs.find(p => p.id === id);
-        if (pair) {
-            this.selectedText.textContent = `${pair.description} (${id.toUpperCase()})`;
-        }
-    },
-    
-    escapeRegex(str) {
-        return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        App.loadOrderBook(id);
     }
 };
 
@@ -607,17 +656,17 @@ const App = {
             lastUpdate: document.getElementById('lastUpdate'),
             fetchTime: document.getElementById('fetchTime'),
             renderTime: document.getElementById('renderTime'),
-            totalTime: document.getElementById('totalTime'),
-            currentPairDisplay: document.getElementById('currentPairDisplay')
+            totalTime: document.getElementById('totalTime')
         };
         
-        // Init dropdown
-        Dropdown.init();
+        // Init search dropdown
+        SearchDropdown.init();
         
         Renderer.showSkeleton('buy');
         Renderer.showSkeleton('sell');
         this.setStatus('Initializing...', 'loading');
         
+        // RPS Counter
         setInterval(() => {
             const elapsed = (Date.now() - this.startTime) / 1000;
             this.el.rps.textContent = elapsed > 0 ? (this.requestCount / Math.max(elapsed, 1)).toFixed(1) : '0';
@@ -636,45 +685,38 @@ const App = {
             this.el.wsText.textContent = 'Error';
         }
         
-        this.el.refreshBtn.addEventListener('click', () => {
-            console.log('[App] Manual refresh');
-            this.refresh();
-        });
+        // Refresh button
+        this.el.refreshBtn.addEventListener('click', () => this.refresh());
     },
     
     async loadPairs() {
         let pairs = Cache.get('pairs');
         
         if (!pairs) {
-            console.log('[App] Fetching pairs from API...');
             this.setStatus('Loading pairs...', 'loading');
-            
             const result = await Fetcher.fetch('https://indodax.com/api/pairs');
             pairs = result.data.sort((a, b) => a.description.localeCompare(b.description));
             Cache.set('pairs', pairs);
-        } else {
-            console.log('[App] Using cached pairs');
         }
         
         this.pairs = pairs;
         
-        // Populate dropdown
-        Dropdown.populate(pairs);
-        
+        // Default to BTC
         const btc = pairs.find(p => p.id === 'btcidr');
         this.currentPair = btc ? btc.id : pairs[0]?.id || 'btcidr';
         
-        // Set initial selected
-        Dropdown.setSelected(this.currentPair);
+        // Build dropdown options
+        SearchDropdown.buildOptions(pairs, this.currentPair);
         
-        console.log('[App] Loaded', pairs.length, 'pairs, default:', this.currentPair);
+        // Update display
+        const currentPairData = pairs.find(p => p.id === this.currentPair);
+        SearchDropdown.updateDisplay(currentPairData);
+        
+        console.log('[App] Loaded', pairs.length, 'pairs');
     },
     
     async loadOrderBook(pairId) {
-        if (this.isLoading) {
-            console.log('[App] Already loading, skipping...');
-            return;
-        }
+        if (this.isLoading) return;
         
         this.isLoading = true;
         this.currentPair = pairId;
@@ -682,9 +724,11 @@ const App = {
         const pair = this.pairs.find(p => p.id === pairId);
         this.coinName = pair ? pair.description.split('/')[0].trim() : pairId.replace('idr', '').toUpperCase();
         
-        console.log('[App] Loading order book for:', pairId, '- Coin:', this.coinName);
+        console.log('[App] Loading:', pairId, '-', this.coinName);
         
-        this.el.currentPairDisplay.textContent = `(${pairId.toUpperCase()})`;
+        // Update dropdown display
+        SearchDropdown.updateDisplay(pair);
+        
         this.el.refreshBtn.disabled = true;
         this.el.wsStatus.className = 'dot slow';
         this.setStatus('Loading...', 'loading');
@@ -701,12 +745,10 @@ const App = {
             
             this.requestCount++;
             
-            console.log('[App] Data received:', result.data);
-            
             const buyData = result.data.buy || [];
             const sellData = result.data.sell || [];
             
-            console.log('[App] Buy orders:', buyData.length, 'Sell orders:', sellData.length);
+            console.log('[App] Received:', buyData.length, 'buy,', sellData.length, 'sell');
             
             this.el.latency.textContent = Math.round(result.elapsed);
             this.el.fetchTime.textContent = `⏱️ Fetch: ${Math.round(fetchTime)}ms`;
@@ -744,11 +786,8 @@ const App = {
             this.setStatus('✓ Ready', 'success');
             this.el.wsStatus.className = 'dot';
             
-            console.log('[App] Load complete in', Math.round(totalTime), 'ms');
-            
         } catch (e) {
-            console.error('[App] Load error:', e);
-            
+            console.error('[App] Error:', e);
             this.setStatus('❌ ' + e.message, 'error');
             this.el.wsStatus.className = 'dot error';
             
@@ -795,7 +834,7 @@ const App = {
 // 🚀 START
 // ============================================
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('[Boot] Starting Hyper Order Book v3.1');
+    console.log('[Boot] Hyper Order Book v3.2');
     App.init();
 });
 
